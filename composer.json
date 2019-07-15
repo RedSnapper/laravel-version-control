@@ -1,0 +1,38 @@
+{
+    "name": "rs/laravel-version-control",
+    "description": "Foundations for making your app version controlled. Provides migration, blueprint and base models. Will make your app GxP compliant if you exclusively use the VC models and table structure as set out in this package.",
+    "require": {
+        "php": "^7.1.3",
+        "illuminate/support": ">=5.6",
+        "illuminate/database": ">=5.6"
+    },
+    "autoload": {
+        "psr-4": {
+            "Redsnapper\\LaravelVersionControl\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Redsnapper\\LaravelVersionControl\\Tests\\": "tests/"
+        }
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^7.0",
+        "mockery/mockery": "^1.0",
+        "orchestra/testbench": "3.8.x-dev"
+    },
+    "authors": [
+        {
+            "name": "Red Snapper Development Team",
+            "email": "contact@redsnapper.net"
+        }
+    ],
+    "minimum-stability": "dev",
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Redsnapper\\LaravelVersionControl\\VersionControlServiceProvider"
+            ]
+        }
+    }
+}

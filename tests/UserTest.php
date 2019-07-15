@@ -1,0 +1,137 @@
+<?php
+
+namespace Redsnapper\LaravelVersionControl\Tests;
+
+use Redsnapper\LaravelVersionControl\Tests\Fixtures\Models\RoleUser;
+use Redsnapper\LaravelVersionControl\Tests\Fixtures\Models\User;
+
+class UserTest extends BaseTest implements BaseModelTest
+{
+    private function params($overrides = [])
+    {
+        return array_merge([
+            'vc_active' => 1,
+            'vc_modifier_unique_key' => null,
+            'username' => $this->faker->firstName,
+            'email' => $this->faker->unique()->safeEmail,
+            'emailp' => $this->faker->unique()->safeEmail,
+            'password' => 'secret',
+            'active' => 'on'
+        ], $overrides);
+    }
+
+    public function setupModel(array $overrides = [], ?string $key = null)
+    {
+        if(is_null($key)) {
+            $this->model = User::createNew($this->params($overrides));
+        } else {
+            $this->model = User::saveChanges($this->params($overrides), $key);
+        }
+    }
+
+    /** @test */
+    public function can_create_new_record()
+    {
+        $this->create_new_record(User::class);
+    }
+
+    /** @test */
+    public function can_create_new_version_of_existing_record()
+    {
+        $this->create_new_version_of_existing_record();
+    }
+
+    /** @test */
+    public function can_validate_its_data()
+    {
+        $this->validate_data();
+    }
+
+    /** @test */
+    public function can_validate_its_own_version()
+    {
+        $this->validate_version();
+    }
+
+    /** @test */
+    public function cannot_be_saved_outside_of_version_control()
+    {
+        $this->attempt_to_save_outside_of_version_control();
+    }
+
+    /** @test */
+    public function a_user_can_be_restored_to_old_version()
+    {
+        $this->setupModel(["username" => "Version 1"]);
+        $this->assertEquals(1, $this->model->vc_version);
+
+        $this->setupModel(["username" => "Version 2"], $this->model->unique_key);
+        $this->assertEquals(2, $this->model->vc_version);
+
+        $this->model::restore($this->model->unique_key, 1);
+
+        $model = User::find($this->model->unique_key);
+        $this->assertEquals("Version 1", $model->username);
+    }
+
+    /** @test */
+    public function a_user_can_be_deleted()
+    {
+        $this->setupModel();
+        $this->assertEquals(1, $this->model->vc_version);
+        $this->assertEquals(1, $this->model->vc_active);
+
+        $this->model->delete();
+
+        $model = User::withoutGlobalScope($this->model)->find($this->model->unique_key);
+        $this->assertEquals(2, $model->vc_version);
+        $this->assertEquals(0, $model->vc_active);
+    }
+
+    /** @test */
+    public function users_can_subscribe_to_roles()
+    {
+        $roleA = $this->createRole(["name" => "Role A"]);
+        $roleB = $this->createRole(["name" => "Role B"]);
+
+        $this->setupModel(['username' => 'personA']);
+        $this->model->assignRole($roleA);
+
+        $this->assertTrue($this->model->belongsToRole($roleA));
+        $this->assertFalse($this->model->belongsToRole($roleB));
+
+        $this->model->assignRole($roleB);
+        $this->assertTrue($this->model->belongsToRole($roleA));
+        $this->assertTrue($this->model->belongsToRole($roleB));
+    }
+
+    /** @test */
+    public function users_can_be_unsubscribed_from_roles()
+    {
+        $roleA = $this->createRole(["name" => "Role A"]);
+        $this->setupModel(['username' => 'personA']);
+
+        $this->model->assignRole($roleA);
+        $this->assertTrue($this->model->belongsToRole($roleA));
+
+        $this->model->unAssignRole($roleA);
+        $this->assertFalse($this->model->belongsToRole($roleA));
+    }
+
+    /** @test */
+    public function users_get_permissions_from_roles()
+    {
+        $permissionA = $this->createPermission(["name" => "can-see-the-ground"]);
+        $permissionB = $this->createPermission(["name" => "can-see-the-sky"]);
+
+        $roleA = $this->createRole(["name" => "Role A"]);
+
+        $roleA->givePermissionTo($permissionA);
+
+        $this->setupModel(['username' => 'personA']);
+        $this->model->assignRole($roleA);
+
+        $this->assertTrue($this->model->hasPermissionTo('can-see-the-ground'));
+        $this->assertFalse($this->model->hasPermissionTo('can-see-the-sky'));
+    }
+}
