@@ -13,7 +13,7 @@ class Blueprint extends LaravelBlueprint
         $this->unsignedInteger('vc_parent')->nullable();
         $this->unsignedInteger('vc_branch');
         $this->boolean('vc_active');
-        $this->string('vc_modifier_unique_key');
+        $this->uuid('vc_modifier_unique_key');
         $this->primary(['unique_key','vc_version'], "{$tableName}_vc_primary_key");
         $this->unique(['unique_key','vc_parent','vc_branch'], "{$tableName}_vc_unique_key");
     }
@@ -27,7 +27,7 @@ class Blueprint extends LaravelBlueprint
         $this->unsignedInteger('vc_parent')->nullable();
         $this->unsignedInteger('vc_branch');
         $this->boolean('vc_active');
-        $this->string('vc_modifier_unique_key');
+        $this->uuid('vc_modifier_unique_key');
         $this->primary(['unique_key','vc_version'], "{$tableName}_vc_primary_key");
         $this->unique([$key1,$key2,'vc_parent','vc_branch'], "{$tableName}_vc_unique_key");
     }
