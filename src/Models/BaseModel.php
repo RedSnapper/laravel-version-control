@@ -2,6 +2,8 @@
 
 namespace Redsnapper\LaravelVersionControl\Models;
 
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Redsnapper\LaravelVersionControl\Exceptions\ReadOnlyException;
 use Redsnapper\LaravelVersionControl\Models\Traits\ActiveOnlyModel;
 use Redsnapper\LaravelVersionControl\Models\Traits\NoDeletesModel;
@@ -15,6 +17,7 @@ use Illuminate\Support\Str;
 
 /**
  * Class BaseModel
+ *
  * @property string $unique_key
  * @property int $vc_version
  * @property int $vc_active
@@ -24,114 +27,77 @@ use Illuminate\Support\Str;
 class BaseModel extends Model
 {
     protected $primaryKey = 'unique_key';
-    protected $versionsTable = 'model_versions';
     public $incrementing = false;
 
     use ActiveOnlyModel,
-        ReadOnlyModel,
-        NoUpdatesModel,
-        NoDeletesModel;
+      ReadOnlyModel,
+      NoDeletesModel;
 
     public static function boot()
     {
         parent::boot();
 
-        //TODO: Make a decision on whether to use this or not or just overwrite the save function instead
-        // This function, if we use it, absolutely guarantees data integrity by verifying that the data we are trying
-        // to save to the key table, matches that on the latest version copy
-//        static::saving(function (Model $model) {
-//            $me = collect($model->toArray());
-//            $difference = $me->diff($model->versions()->latest()->first()->toArray());
-//            if(!empty($difference->all())) {
-//                throw new VersionControlException();
-//            }
-//        });
+        static::creating(function (BaseModel $model) {
+            return $model->createVersion();
+        });
+
+        static::updating(function (BaseModel $model) {
+            return $model->createVersion();
+        });
+
+        static::deleting(function (BaseModel $model) {
+            return $model->createDeleteVersion();
+        });
     }
 
-    public static function createNew(array $data): BaseModel
+    protected function createVersion(): bool
     {
-        return self::newVersion($data, null);
-    }
+        $version = $this->getVersionInstance();
 
-    public static function saveChanges(array $data, string $key): BaseModel
-    {
-        return self::newVersion($data, $key);
-    }
-
-    /**
-     * @param  array  $data
-     * @param  string|null  $key
-     * @return mixed
-     */
-    private static function newVersion(array $data, ?string $key = null): BaseModel
-    {
-        $versionsTable = self::getVersionTable();
-
-        if(!is_null($key)) {
-            $model = self::replicateVersion($versionsTable, $key);
-        } else {
-            $model = self::getNewVersion($versionsTable);
+        if (!$this->exists) {
+            $uid = Str::uuid();
+            $version->unique_key = $uid;
         }
 
-        // Now populate new data
-        $model->fill($data);
+        $version->fill($this->attributes);
 
-        // Allow for models with passwords
-        if(isset($data["password"])) {
-            $model->password = Hash::make($data["password"]);
+        if ($version->save()) {
+            $this->unique_key = $version->unique_key;
+            $this->vc_version = $version->vc_version;
+            $this->vc_active = $version->vc_active;
+            return true;
         }
 
-        $model->setBaseModel(get_called_class());
-        $model->save();
-
-        // Key table model will now exist due to versioned creating event hook (see Versioned.php)
-        return get_called_class()::where('unique_key', $model->unique_key)->first();
+        return false;
     }
 
-
-    /**
-     * This fires whenever we call save() on the model. The issue is that update() will still fire a ReadOnly so we also need
-     * to overwrite update. All we actually check is where in the app the save() function was called from, and if was from anywhere
-     * outside of Versioned class then we disallow it and throw a ReadOnly exception
-     * It's not foolproof by any means (we could simply write in a function to Versioned and call from there etc etc - though all of that would
-     * be traced on Github).
-     *
-     * Similarly, if a developer really wanted to work around the other option (DB level control) we could just as easily use
-     * root access connection to bypass controls... The key is to trusting devs, and our code vc, and focus entirely on locking out
-     * third parties. This does that, whilst minimising dev time & app complexity
-     *
-     * @param  array  $options
-     * @return bool|void
-     */
-    public function save(array $options = [])
+    protected function createDeleteVersion()
     {
-        $trace = debug_backtrace();
-        if($trace[1]['class'] !== 'Redsnapper\LaravelVersionControl\Models\Versioned') {
-            throw new ReadOnlyException(__FUNCTION__, get_called_class());
-        }
+        $version = $this->getVersionInstance();
+        $version->fill($this->attributes);
+        $version->vc_active = false;
 
-        parent::save();
+        if ($version->save()) {
+            $this->vc_version = $version->vc_version;
+        }
     }
 
     /**
      * @return string
      */
-    private static function getVersionTable(): string
+    public function getVersionsTable(): string
     {
-        $class = get_called_class();
-        return (new $class())->versionsTable;
+        return $this->getTable()."_versions";
     }
 
     /**
      * @param  string  $versionsTable
      * @return Versioned
      */
-    private static function getVersionClass(string $versionsTable): Versioned
+    private function getVersionInstance(): Versioned
     {
         $versionClass = new Versioned();
-        $versionClass->setTable($versionsTable);
-
-        return $versionClass;
+        return $versionClass->setTable($this->getVersionsTable());
     }
 
     /**
@@ -142,14 +108,23 @@ class BaseModel extends Model
      */
     public function versions(): HasMany
     {
-        $instance = self::getVersionClass($this->versionsTable);
+        $instance = $this->getVersionInstance();
 
         $foreignKey = "unique_key";
         $localKey = "unique_key";
 
         return $this->newHasMany(
-            $instance->newQuery(), $this, $instance->getTable().'.'.$foreignKey, $localKey
+          $instance->newQuery(), $this, $instance->getTable().'.'.$foreignKey, $localKey
         );
+    }
+
+    protected function performDeleteOnModel()
+    {
+
+        $query = $this->setKeysForSaveQuery($this->newModelQuery());
+        $query->update(['vc_version' => $this->vc_version, 'vc_active' => false]);
+
+        $this->exists = false;
     }
 
     /**
@@ -164,7 +139,8 @@ class BaseModel extends Model
     }
 
     /**
-     * Compares the values in this key table row to the values in the latest versioned table row and validates it is equal
+     * Compares the values in this key table row to the values in the latest versioned table row and validates it is
+     * equal
      *
      * @return bool
      */
@@ -176,20 +152,21 @@ class BaseModel extends Model
     }
 
     /**
-     * Gets the restore point based on key and version passed. Replicates it as a new version & sets the parent to restore point
+     * Gets the restore point based on key and version passed. Replicates it as a new version & sets the parent to
+     * restore point
      *
      * @param  string  $key
-     * @param int|string $version
+     * @param  int|string  $version
      * @return Versioned
      */
     public static function restore(string $key, $version): Versioned
     {
         $versionsTable = self::getVersionTable();
-        $restorePoint = self::getVersionClass($versionsTable);
+        $restorePoint = self::getVersionInstance($versionsTable);
 
         $restorePoint = $restorePoint->where('unique_key', $key)
-            ->where('vc_version', $version)
-            ->firstOrFail();
+          ->where('vc_version', $version)
+          ->firstOrFail();
 
         $new = $restorePoint->replicate();
         $new->setTable($versionsTable);
@@ -201,26 +178,27 @@ class BaseModel extends Model
         return $new;
     }
 
-    /**
-     * To delete something, we replicate the current instance, then enter a new one with only the active key different to signify deletion
-     * The creating event takes care of still incrementing the version, branch etc and created takes care of the key table
-     *
-     * @return bool
-     */
-    public function delete(): bool
-    {
-        $latest = $this->versions()->latest()->first();
-
-        /** @var Versioned $delete */
-        $delete = $latest->replicate();
-        $delete->setTable($this->versionsTable);
-        $delete->setBaseModel(get_class($this));
-        $delete->unique_key = $this->unique_key;
-        $delete->vc_active = 0;
-        $delete->save();
-
-        return true;
-    }
+    ///**
+    // * To delete something, we replicate the current instance, then enter a new one with only the active key different
+    // * to signify deletion The creating event takes care of still incrementing the version, branch etc and created
+    // * takes care of the key table
+    // *
+    // * @return bool
+    // */
+    //public function delete(): bool
+    //{
+    //    $latest = $this->versions()->latest()->first();
+    //
+    //    /** @var Versioned $delete */
+    //    $delete = $latest->replicate();
+    //    $delete->setTable($this->versionsTable);
+    //    $delete->setBaseModel(get_class($this));
+    //    $delete->unique_key = $this->unique_key;
+    //    $delete->vc_active = 0;
+    //    $delete->save();
+    //
+    //    return true;
+    //}
 
     /**
      * @param  string  $key1
@@ -231,12 +209,12 @@ class BaseModel extends Model
     public function attach(string $key1, string $key2, BaseModel $pivot): BaseModel
     {
         $existing = $pivot->where($pivot->key1, $key1)
-            ->where($pivot->key2, $key2)
-            ->first();
+          ->where($pivot->key2, $key2)
+          ->first();
 
         $versionsTable = $pivot::getVersionTable();
 
-        if(!empty($existing)) {
+        if (!empty($existing)) {
             $model = self::replicateVersion($versionsTable, $existing->unique_key);
         } else {
             $model = self::getNewVersion($versionsTable);
@@ -260,16 +238,18 @@ class BaseModel extends Model
      */
     private static function replicateVersion(string $versionsTable, $key): Versioned
     {
-        $previous = self::getVersionClass($versionsTable)
-            ->where('unique_key', $key)
-            ->orderBy('vc_version', 'desc')
-            ->orderBy('vc_branch','desc')
-            ->first(); // Fetch the most recent version
+        $previous = self::getVersionInstance($versionsTable)
+          ->where('unique_key', $key)
+          ->orderBy('vc_version', 'desc')
+          ->orderBy('vc_branch', 'desc')
+          ->first(); // Fetch the most recent version
 
-        $model = $previous->replicate(['vc_version','vc_parent','vc_branch']); // And use it as the basis for our new version
+        $model = $previous->replicate([
+          'vc_version', 'vc_parent', 'vc_branch'
+        ]); // And use it as the basis for our new version
         $model->setTable($versionsTable);
 
-        if(property_exists($previous, "password")) {
+        if (property_exists($previous, "password")) {
             $model->password = $previous->password;
         }
 
@@ -286,7 +266,7 @@ class BaseModel extends Model
      */
     private static function getNewVersion($versionsTable): Versioned
     {
-        $model = self::getVersionClass($versionsTable);
+        $model = self::getVersionInstance($versionsTable);
         $model->unique_key = Str::uuid();
 
         return $model;

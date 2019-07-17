@@ -10,10 +10,10 @@ trait NoDeletesModel
      * Throws ReadOnlyException on delete
      * @throws ReadOnlyException
      */
-    public function delete()
-    {
-        throw new ReadOnlyException(__FUNCTION__, get_called_class());
-    }
+    //public function delete()
+    //{
+    //    throw new ReadOnlyException(__FUNCTION__, get_called_class());
+    //}
 
     /**
      * Throws ReadOnlyException on destroy
@@ -38,10 +38,10 @@ trait NoDeletesModel
      * Throws ReadOnlyException on performDeleteOnModel
      * @throws ReadOnlyException
      */
-    public function performDeleteOnModel()
-    {
-        throw new ReadOnlyException(__FUNCTION__, get_called_class());
-    }
+    //public function performDeleteOnModel()
+    //{
+    //    throw new ReadOnlyException(__FUNCTION__, get_called_class());
+    //}
 
     /**
      * Throws ReadOnlyException on truncate
