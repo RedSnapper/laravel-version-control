@@ -9,7 +9,7 @@ use Redsnapper\LaravelVersionControl\Tests\Fixtures\Models\User;
 use Redsnapper\LaravelVersionControl\Tests\Fixtures\Models\Role;
 use Redsnapper\LaravelVersionControl\Tests\Fixtures\Models\Permission;
 
-class BaseTest extends TestCase
+class Base extends TestCase
 {
     use RefreshDatabase, WithFaker;
 
@@ -27,7 +27,7 @@ class BaseTest extends TestCase
     public function create_new_version_of_existing_record()
     {
         $this->setupModel();
-        $this->setupModel([], $this->model->unique_key);
+        $this->setupModel([], $this->model->uid);
         $this->assertEquals(2, $this->model->versions()->count());
     }
 
@@ -43,18 +43,11 @@ class BaseTest extends TestCase
         $this->assertTrue($this->model->validateData());
     }
 
-    public function attempt_to_save_outside_of_version_control()
-    {
-        $this->setupModel();
-        $this->expectException(ReadOnlyException::class);
-        $this->model->save();
-    }
-
     protected function createUser()
     {
         return User::createNew([
             'vc_active' => 1,
-            'vc_modifier_unique_key' => null,
+            'vc_modifier_uid' => null,
             'username' => $this->faker->firstName,
             'email' => $this->faker->unique()->safeEmail,
             'emailp' => $this->faker->unique()->safeEmail,
@@ -65,20 +58,23 @@ class BaseTest extends TestCase
 
     protected function createPermission(array $overrides = [])
     {
-        return Permission::createNew(array_merge([
+        $permission = (new Permission())->fill(array_merge([
             'vc_active' => 1,
-            'vc_modifier_unique_key' => null,
+            'vc_modifier_uid' => null,
             'name' => $this->faker->jobTitle,
             'active' => 'on'
         ], $overrides));
+
+        $permission->save();
+        return $permission;
     }
 
     protected function createRole(array $overrides = [])
     {
-        return Role::createNew(array_merge([
+        $role = (new Role())->fill(array_merge([
             'vc_active' => 1,
-            'vc_modifier_unique_key' => null,
-            'category_unique_key' => $this->faker->word,
+            'vc_modifier_uid' => null,
+            'category_uid' => $this->faker->word,
             'name' => $this->faker->jobTitle,
             'hidden' => rand(0,1),
             'level' => rand(0,30),
@@ -87,5 +83,8 @@ class BaseTest extends TestCase
             'alphasort' => array_rand(['m50','z50','d50','j10','c40','b30']),
             'active' => 'on'
         ], $overrides));
+
+        $role->save();
+        return $role;
     }
 }

@@ -18,8 +18,7 @@ class CreateRolesTable extends Migration
         $tables = $this->makeVcTables("role");
         foreach($tables as $table) {
             $this->schema->table($table, function(Blueprint $table) {
-                $table->string('category_unique_key')->default(''); // Cant add empty not null columns in sqlite
-                $table->string('name')->unique()->default(''); // Cant add empty not null columns in sqlite
+                $table->string('category_uid')->default(''); // Cant add empty not null columns in sqlite
                 $table->boolean('hidden')->default(false);
                 $table->unsignedInteger('level')->default(0);
                 $table->unsignedInteger('view')->default(0);
@@ -28,6 +27,16 @@ class CreateRolesTable extends Migration
                 $table->string('active')->default('on');
             });
         }
+
+        list($versionTable, $keyTable) = $tables;
+
+        $this->schema->table($keyTable, function(Blueprint $table) {
+            $table->string('name')->unique()->default(''); // Cant add empty not null columns in sqlite
+        });
+
+        $this->schema->table($versionTable, function(Blueprint $table) {
+            $table->string('name')->default(''); // Cant add empty not null columns in sqlite
+        });
     }
 
     /**

@@ -2,16 +2,15 @@
 
 namespace Redsnapper\LaravelVersionControl\Tests;
 
-use Redsnapper\LaravelVersionControl\Tests\Fixtures\Models\RoleUser;
 use Redsnapper\LaravelVersionControl\Tests\Fixtures\Models\User;
 
-class UserTest extends BaseTest implements BaseModelTest
+class UserTest extends Base implements BaseModelTest
 {
     private function params($overrides = [])
     {
         return array_merge([
             'vc_active' => 1,
-            'vc_modifier_unique_key' => null,
+            'vc_modifier_uid' => null,
             'username' => $this->faker->firstName,
             'email' => $this->faker->unique()->safeEmail,
             'emailp' => $this->faker->unique()->safeEmail,
@@ -22,11 +21,16 @@ class UserTest extends BaseTest implements BaseModelTest
 
     public function setupModel(array $overrides = [], ?string $key = null)
     {
+        $params = $this->params($overrides);
+
         if(is_null($key)) {
-            $this->model = User::createNew($this->params($overrides));
+            $params = array_merge($params, ['uid' => $key]);
+            $this->model = (new User())->fill($params);
         } else {
-            $this->model = User::saveChanges($this->params($overrides), $key);
+            $this->model = User::find($key);
         }
+
+        $this->model->save();
     }
 
     /** @test */
@@ -65,12 +69,12 @@ class UserTest extends BaseTest implements BaseModelTest
         $this->setupModel(["username" => "Version 1"]);
         $this->assertEquals(1, $this->model->vc_version);
 
-        $this->setupModel(["username" => "Version 2"], $this->model->unique_key);
+        $this->setupModel(["username" => "Version 2"], $this->model->uid);
         $this->assertEquals(2, $this->model->vc_version);
 
-        $this->model::restore($this->model->unique_key, 1);
+        $this->model::restore($this->model->uid, 1);
 
-        $model = User::find($this->model->unique_key);
+        $model = User::find($this->model->uid);
         $this->assertEquals("Version 1", $model->username);
     }
 
@@ -83,7 +87,7 @@ class UserTest extends BaseTest implements BaseModelTest
 
         $this->model->delete();
 
-        $model = User::withoutGlobalScope($this->model)->find($this->model->unique_key);
+        $model = User::withoutGlobalScope($this->model)->find($this->model->uid);
         $this->assertEquals(2, $model->vc_version);
         $this->assertEquals(0, $model->vc_active);
     }

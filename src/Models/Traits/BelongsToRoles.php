@@ -15,7 +15,7 @@ trait BelongsToRoles
     private function getRoleKey($role): string
     {
         if($role instanceof Role){
-            $role = $role->unique_key;
+            $role = $role->uid;
         }
 
         return $role;
@@ -30,7 +30,7 @@ trait BelongsToRoles
         $roleKey = $this->getRoleKey($role);
 
         if($this->roles()->wherePivot('vc_active',1)
-            ->where('role_unique_key', $roleKey)
+            ->where('role_uid', $roleKey)
             ->first()) {
             return true;
         } else {

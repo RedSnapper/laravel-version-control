@@ -43,12 +43,12 @@ class User extends BaseModel implements
 
     protected $versionsTable = 'user_versions';
 
-    protected $fillable = ['unique_key','vc_version','vc_active','username','email','emailp','password','active'];
+    protected $fillable = ['vc_version','vc_active','username','email','emailp','password','active'];
     protected $hidden = ['remember_token'];
 
     public function isCurrentUser(): bool
     {
-        return $this->unique_key === auth()->user()->unique_key;
+        return $this->uid === auth()->user()->uid;
     }
 
     /**
@@ -58,10 +58,10 @@ class User extends BaseModel implements
     {
         return $this->belongsToMany(Role::class,
             'role_users',
-            'user_unique_key',
-            'role_unique_key',
-            'unique_key',
-            'unique_key'
+            'user_uid',
+            'role_uid',
+            'uid',
+            'uid'
         );
     }
 
@@ -75,8 +75,8 @@ class User extends BaseModel implements
         $permission = Permission::findByName($permission);
 
         if ($permission) {
-            return $permission->roles()->pluck('role_unique_key')
-                ->intersect($this->roles()->pluck('role_unique_key'))->isNotEmpty();
+            return $permission->roles()->pluck('role_uid')
+                ->intersect($this->roles()->pluck('role_uid'))->isNotEmpty();
         }
 
         return false;
@@ -89,7 +89,7 @@ class User extends BaseModel implements
     public function assignRole(Role $role): self
     {
         //TODO: Consider a possible future need for having new versions of users when attaching/detaching roles
-        $this->attach($role->unique_key, $this->unique_key, (new RoleUser()));
+        $this->attach($role->uid, $this->uid, (new RoleUser()));
 
         return $this;
     }
@@ -100,8 +100,8 @@ class User extends BaseModel implements
      */
     public function unAssignRole(Role $role): self
     {
-        $roleUser = RoleUser::where('role_unique_key', $role->unique_key)
-            ->where('user_unique_key', $this->unique_key)
+        $roleUser = RoleUser::where('role_uid', $role->uid)
+            ->where('user_uid', $this->uid)
             ->firstOrFail();
 
         $roleUser->delete();

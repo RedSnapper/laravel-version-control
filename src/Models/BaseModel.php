@@ -4,6 +4,7 @@ namespace Redsnapper\LaravelVersionControl\Models;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Pluralizer;
 use Redsnapper\LaravelVersionControl\Exceptions\ReadOnlyException;
 use Redsnapper\LaravelVersionControl\Models\Traits\ActiveOnlyModel;
 use Redsnapper\LaravelVersionControl\Models\Traits\NoDeletesModel;
@@ -14,11 +15,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Redsnapper\LaravelVersionControl\Tests\Fixtures\Models\PermissionRole;
 
 /**
  * Class BaseModel
  *
- * @property string $unique_key
+ * @property string $uid
  * @property int $vc_version
  * @property int $vc_active
  * @property Carbon|null $created_at
@@ -26,7 +28,7 @@ use Illuminate\Support\Str;
  */
 class BaseModel extends Model
 {
-    protected $primaryKey = 'unique_key';
+    protected $primaryKey = 'uid';
     public $incrementing = false;
 
     use ActiveOnlyModel,
@@ -37,11 +39,7 @@ class BaseModel extends Model
     {
         parent::boot();
 
-        static::creating(function (BaseModel $model) {
-            return $model->createVersion();
-        });
-
-        static::updating(function (BaseModel $model) {
+        static::saving(function (BaseModel $model) {
             return $model->createVersion();
         });
 
@@ -53,16 +51,17 @@ class BaseModel extends Model
     protected function createVersion(): bool
     {
         $version = $this->getVersionInstance();
+        $version->fill($this->attributes);
 
         if (!$this->exists) {
             $uid = Str::uuid();
-            $version->unique_key = $uid;
+            $version->uid = $uid;
+        } else {
+            $version->uid = $this->uid;
         }
 
-        $version->fill($this->attributes);
-
         if ($version->save()) {
-            $this->unique_key = $version->unique_key;
+            $this->uid = $version->uid;
             $this->vc_version = $version->vc_version;
             $this->vc_active = $version->vc_active;
             return true;
@@ -87,11 +86,10 @@ class BaseModel extends Model
      */
     public function getVersionsTable(): string
     {
-        return $this->getTable()."_versions";
+        return Pluralizer::singular($this->getTable())."_versions";
     }
 
     /**
-     * @param  string  $versionsTable
      * @return Versioned
      */
     private function getVersionInstance(): Versioned
@@ -110,8 +108,8 @@ class BaseModel extends Model
     {
         $instance = $this->getVersionInstance();
 
-        $foreignKey = "unique_key";
-        $localKey = "unique_key";
+        $foreignKey = "uid";
+        $localKey = "uid";
 
         return $this->newHasMany(
           $instance->newQuery(), $this, $instance->getTable().'.'.$foreignKey, $localKey
@@ -135,7 +133,7 @@ class BaseModel extends Model
     public function validateVersion(): bool
     {
         $latest = $this->versions()->latest()->first();
-        return $this->vc_version === $latest->vc_version;
+        return (int)$this->vc_version === (int)$latest->vc_version;
     }
 
     /**
@@ -159,19 +157,18 @@ class BaseModel extends Model
      * @param  int|string  $version
      * @return Versioned
      */
-    public static function restore(string $key, $version): Versioned
+    public function restore(string $key, $version): Versioned
     {
-        $versionsTable = self::getVersionTable();
-        $restorePoint = self::getVersionInstance($versionsTable);
+        $restorePoint = $this->getVersionInstance();
 
-        $restorePoint = $restorePoint->where('unique_key', $key)
+        $restorePoint = $restorePoint->where('uid', $key)
           ->where('vc_version', $version)
           ->firstOrFail();
 
         $new = $restorePoint->replicate();
-        $new->setTable($versionsTable);
-        $new->setBaseModel(get_called_class());
-        $new->unique_key = $restorePoint->unique_key;
+        $new->setTable($this->getVersionsTable());
+        $new->setBaseModel(get_called_class()); //TODO: What now?
+        $new->uid = $restorePoint->uid;
         $new->vc_parent = $restorePoint->vc_version;
         $new->save();
 
@@ -193,7 +190,7 @@ class BaseModel extends Model
     //    $delete = $latest->replicate();
     //    $delete->setTable($this->versionsTable);
     //    $delete->setBaseModel(get_class($this));
-    //    $delete->unique_key = $this->unique_key;
+    //    $delete->uid = $this->uid;
     //    $delete->vc_active = 0;
     //    $delete->save();
     //
@@ -212,12 +209,12 @@ class BaseModel extends Model
           ->where($pivot->key2, $key2)
           ->first();
 
-        $versionsTable = $pivot::getVersionTable();
+        $versionsTable = $pivot->getVersionsTable();
 
         if (!empty($existing)) {
-            $model = self::replicateVersion($versionsTable, $existing->unique_key);
+            $model = $this->replicateVersion($versionsTable, $existing->uid);
         } else {
-            $model = self::getNewVersion($versionsTable);
+            $model = $this->getNewPivotVersion($versionsTable);
         }
 
         // Now populate new data
@@ -226,7 +223,7 @@ class BaseModel extends Model
         $model->save();
 
         // Key table model will now exist due to versioned creating event hook (see Versioned.php)
-        return get_class($pivot)::where('unique_key', $model->unique_key)->first();
+        return get_class($pivot)::where('uid', $model->uid)->first();
     }
 
     /**
@@ -236,10 +233,10 @@ class BaseModel extends Model
      * @param $key
      * @return Versioned
      */
-    private static function replicateVersion(string $versionsTable, $key): Versioned
+    private function replicateVersion(string $versionsTable, $key): Versioned
     {
-        $previous = self::getVersionInstance($versionsTable)
-          ->where('unique_key', $key)
+        $previous = $this->getVersionInstance()
+          ->where('uid', $key)
           ->orderBy('vc_version', 'desc')
           ->orderBy('vc_branch', 'desc')
           ->first(); // Fetch the most recent version
@@ -253,7 +250,7 @@ class BaseModel extends Model
             $model->password = $previous->password;
         }
 
-        $model->unique_key = $key;
+        $model->uid = $key;
 
         return $model;
     }
@@ -261,13 +258,13 @@ class BaseModel extends Model
     /**
      * For instances where a totally new record is being made, grab a new version with uuid
      *
-     * @param $versionsTable
      * @return Versioned
      */
-    private static function getNewVersion($versionsTable): Versioned
+    private function getNewPivotVersion($table): Versioned
     {
-        $model = self::getVersionInstance($versionsTable);
-        $model->unique_key = Str::uuid();
+        $model = new Versioned();
+        $model->setTable($table);
+        $model->uid = Str::uuid();
 
         return $model;
     }

@@ -18,8 +18,8 @@ class RoleUser extends BaseModel
 {
     protected $versionsTable = 'role_user_versions';
 
-    protected $fillable = ['unique_key','vc_version','vc_active','role_unique_key','user_unique_key'];
+    protected $fillable = ['uid','vc_version','vc_active','role_uid','user_uid'];
 
-    public $key1 = "role_unique_key";
-    public $key2 = "user_unique_key";
+    public $key1 = "role_uid";
+    public $key2 = "user_uid";
 }

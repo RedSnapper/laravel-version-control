@@ -21,7 +21,7 @@ You must set the following properties on each model:
 
 ````php
 protected $versionsTable = 'model_versions'; // This will be the singular version of your model followed by _versions
-protected $fillable = ['unique_key','gxp_version','gxp_active',... your other model fields];
+protected $fillable = ['uid','gxp_version','gxp_active',... your other model fields];
 ````
 
 ### 'Pivot' tables
@@ -32,10 +32,10 @@ The model is then setup with a couple of extra properties
 
 ```
 protected $versionsTable = 'model_name_versions';
-protected $fillable = ['unique_key','gxp_version','gxp_active','your_first_key','your_second_key'];
+protected $fillable = ['uid','gxp_version','gxp_active','your_first_key','your_second_key'];
 
-public $key1 = "first_unique_key";
-public $key2 = "second_unique_key";
+public $key1 = "first_uid";
+public $key2 = "second_uid";
 ```
 
 The belongsToMany relations are then created and managed slightly differently to a normal laravel b2m relationship. 

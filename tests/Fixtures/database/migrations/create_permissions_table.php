@@ -16,12 +16,17 @@ class CreatePermissionsTable extends Migration
     {
         $tables = $this->makeVcTables("permission");
 
-        foreach($tables as $table) {
-            $this->schema->table($table, function(Blueprint $table) {
-                $table->string('name')->unique()->default(''); // Cant add empty not null columns in sqlite
-                $table->string('active')->default('on');
-            });
-        }
+        list($versionTable, $keyTable) = $tables;
+
+        $this->schema->table($keyTable, function(Blueprint $table) {
+            $table->string('name')->unique()->default(''); // Cant add empty not null columns in sqlite
+            $table->string('active')->default('on');
+        });
+
+        $this->schema->table($versionTable, function(Blueprint $table) {
+            $table->string('name')->default(''); // Cant add empty not null columns in sqlite
+            $table->string('active')->default('on');
+        });
     }
 
     /**

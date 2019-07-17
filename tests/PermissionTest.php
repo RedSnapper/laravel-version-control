@@ -4,13 +4,13 @@ namespace Redsnapper\LaravelVersionControl\Tests;
 
 use Redsnapper\LaravelVersionControl\Tests\Fixtures\Models\Permission;
 
-class PermissionTest extends BaseTest implements BaseModelTest
+class PermissionTest extends Base implements BaseModelTest
 {
     private function params($overrides = [])
     {
         return array_merge([
             'vc_active' => 1,
-            'vc_modifier_unique_key' => null,
+            'vc_modifier_uid' => null,
             'name' => $this->faker->jobTitle,
             'active' => 'on'
         ], $overrides);
@@ -18,11 +18,16 @@ class PermissionTest extends BaseTest implements BaseModelTest
 
     public function setupModel(array $overrides = [], ?string $key = null)
     {
+        $params = $this->params($overrides);
+
         if(is_null($key)) {
-            $this->model = Permission::createNew($this->params());
+            $params = array_merge($params, ['uid' => $key]);
+            $this->model = (new Permission())->fill($params);
         } else {
-            $this->model = Permission::saveChanges($this->params(), $key);
+            $this->model = Permission::find($key);
         }
+
+        $this->model->save();
     }
 
     /** @test */
@@ -47,11 +52,5 @@ class PermissionTest extends BaseTest implements BaseModelTest
     public function can_validate_its_own_version()
     {
         $this->validate_version();
-    }
-
-    /** @test */
-    public function cannot_be_saved_outside_of_version_control()
-    {
-        $this->attempt_to_save_outside_of_version_control();
     }
 }

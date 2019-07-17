@@ -12,7 +12,7 @@ class CreateRoleUserTable extends Migration
      */
     public function up()
     {
-        $this->makeVcPivotTables("role_user", "user_unique_key", "role_unique_key");
+        $this->makeVcPivotTables("role_user", "user_uid", "role_uid");
     }
 
     /**

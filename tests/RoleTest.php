@@ -4,14 +4,14 @@ namespace Redsnapper\LaravelVersionControl\Tests;
 
 use Redsnapper\LaravelVersionControl\Tests\Fixtures\Models\Role;
 
-class RoleTest extends BaseTest implements BaseModelTest
+class RoleTest extends Base implements BaseModelTest
 {
     private function params($overrides = [])
     {
         return array_merge([
             'vc_active' => 1,
-            'vc_modifier_unique_key' => null,
-            'category_unique_key' => $this->faker->word,
+            'vc_modifier_uid' => null,
+            'category_uid' => $this->faker->word,
             'name' => $this->faker->jobTitle,
             'hidden' => rand(0,1),
             'level' => rand(0,30),
@@ -24,11 +24,16 @@ class RoleTest extends BaseTest implements BaseModelTest
 
     public function setupModel(array $overrides = [], ?string $key = null)
     {
+        $params = $this->params($overrides);
+
         if(is_null($key)) {
-            $this->model = Role::createNew($this->params());
+            $params = array_merge($params, ['uid' => $key]);
+            $this->model = (new Role())->fill($params);
         } else {
-            $this->model = Role::saveChanges($this->params(), $key);
+            $this->model = Role::find($key);
         }
+
+        $this->model->save();
     }
 
     /** @test */
@@ -53,12 +58,6 @@ class RoleTest extends BaseTest implements BaseModelTest
     public function can_validate_its_own_version()
     {
         $this->validate_version();
-    }
-
-    /** @test */
-    public function cannot_be_saved_outside_of_version_control()
-    {
-        $this->attempt_to_save_outside_of_version_control();
     }
 
     /** @test */

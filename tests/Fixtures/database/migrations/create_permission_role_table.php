@@ -15,7 +15,7 @@ class CreatePermissionRoleTable extends Migration
      */
     public function up()
     {
-        $this->makeVcPivotTables("permission_role", "permission_unique_key", "role_unique_key");
+        $this->makeVcPivotTables("permission_role", "permission_uid", "role_uid");
     }
 
     /**

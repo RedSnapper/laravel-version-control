@@ -22,7 +22,7 @@ class Permission extends BaseModel
 {
     protected $versionsTable = 'permission_versions';
 
-    protected $fillable = ['unique_key','vc_version','vc_active','name','active'];
+    protected $fillable = ['uid','vc_version','vc_active','name','active'];
 
     use BelongsToRoles;
 
@@ -32,8 +32,8 @@ class Permission extends BaseModel
     public function roles()
     {
         return $this->belongsToMany(Role::class, 'permission_roles',
-            'permission_unique_key',
-            'role_unique_key','unique_key', 'unique_key');
+            'permission_uid',
+            'role_uid','uid', 'uid');
     }
 
     /**
