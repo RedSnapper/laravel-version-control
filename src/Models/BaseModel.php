@@ -2,6 +2,7 @@
 
 namespace Redsnapper\LaravelVersionControl\Models;
 
+use Exception;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Pluralizer;
@@ -58,16 +59,44 @@ class BaseModel extends Model
             $version->uid = $uid;
         } else {
             $version->uid = $this->uid;
+            // If we're saving an existing record, then the parent of version must be set before we try to save it... the VC version will be incremented on save
+            $version->vc_parent = $this->vc_version;
         }
 
         if ($version->save()) {
             $this->uid = $version->uid;
             $this->vc_version = $version->vc_version;
             $this->vc_active = $version->vc_active;
+
             return true;
         }
 
         return false;
+    }
+
+    /**
+     * Gets the restore point based on key and version passed. Replicates it as a new version & sets the parent to
+     * restore point
+     *
+     * @param $version
+     * @return BaseModel
+     * @throws Exception
+     */
+    public function restore($version): BaseModel
+    {
+        // We do this to check the restore point is valid
+        try {
+            $restorePoint = $this->versions()
+                ->where('vc_version', $version)
+                ->firstOrFail();
+        } catch (Exception $e) {
+            throw new Exception('The version you have attempted to restore to does not exist');
+        }
+
+        $this->fill($restorePoint->toArray());
+        $this->save();
+
+        return $this;
     }
 
     protected function createDeleteVersion()
@@ -150,54 +179,6 @@ class BaseModel extends Model
     }
 
     /**
-     * Gets the restore point based on key and version passed. Replicates it as a new version & sets the parent to
-     * restore point
-     *
-     * @param  string  $key
-     * @param  int|string  $version
-     * @return Versioned
-     */
-    public function restore(string $key, $version): Versioned
-    {
-        $restorePoint = $this->getVersionInstance();
-
-        $restorePoint = $restorePoint->where('uid', $key)
-          ->where('vc_version', $version)
-          ->firstOrFail();
-
-        $new = $restorePoint->replicate();
-        $new->setTable($this->getVersionsTable());
-        $new->setBaseModel(get_called_class()); //TODO: What now?
-        $new->uid = $restorePoint->uid;
-        $new->vc_parent = $restorePoint->vc_version;
-        $new->save();
-
-        return $new;
-    }
-
-    ///**
-    // * To delete something, we replicate the current instance, then enter a new one with only the active key different
-    // * to signify deletion The creating event takes care of still incrementing the version, branch etc and created
-    // * takes care of the key table
-    // *
-    // * @return bool
-    // */
-    //public function delete(): bool
-    //{
-    //    $latest = $this->versions()->latest()->first();
-    //
-    //    /** @var Versioned $delete */
-    //    $delete = $latest->replicate();
-    //    $delete->setTable($this->versionsTable);
-    //    $delete->setBaseModel(get_class($this));
-    //    $delete->uid = $this->uid;
-    //    $delete->vc_active = 0;
-    //    $delete->save();
-    //
-    //    return true;
-    //}
-
-    /**
      * @param  string  $key1
      * @param  string  $key2
      * @param  BaseModel  $pivot
@@ -209,63 +190,16 @@ class BaseModel extends Model
           ->where($pivot->key2, $key2)
           ->first();
 
-        $versionsTable = $pivot->getVersionsTable();
-
         if (!empty($existing)) {
-            $model = $this->replicateVersion($versionsTable, $existing->uid);
+            $existing->vc_active = 1; // We should now simply need to set the pivot to active
+            $existing->save();
+
+            return $existing;
         } else {
-            $model = $this->getNewPivotVersion($versionsTable);
+            $pivot->fill([$pivot->key1 => $key1, $pivot->key2 => $key2, "vc_active" => 1]);
+            $pivot->save();
+
+            return $pivot;
         }
-
-        // Now populate new data
-        $model->fill([$pivot->key1 => $key1, $pivot->key2 => $key2, "vc_active" => 1]);
-        $model->setBaseModel(get_class($pivot));
-        $model->save();
-
-        // Key table model will now exist due to versioned creating event hook (see Versioned.php)
-        return get_class($pivot)::where('uid', $model->uid)->first();
-    }
-
-    /**
-     * Starts the process of creating a new version by replicating the current one
-     *
-     * @param  string  $versionsTable
-     * @param $key
-     * @return Versioned
-     */
-    private function replicateVersion(string $versionsTable, $key): Versioned
-    {
-        $previous = $this->getVersionInstance()
-          ->where('uid', $key)
-          ->orderBy('vc_version', 'desc')
-          ->orderBy('vc_branch', 'desc')
-          ->first(); // Fetch the most recent version
-
-        $model = $previous->replicate([
-          'vc_version', 'vc_parent', 'vc_branch'
-        ]); // And use it as the basis for our new version
-        $model->setTable($versionsTable);
-
-        if (property_exists($previous, "password")) {
-            $model->password = $previous->password;
-        }
-
-        $model->uid = $key;
-
-        return $model;
-    }
-
-    /**
-     * For instances where a totally new record is being made, grab a new version with uuid
-     *
-     * @return Versioned
-     */
-    private function getNewPivotVersion($table): Versioned
-    {
-        $model = new Versioned();
-        $model->setTable($table);
-        $model->uid = Str::uuid();
-
-        return $model;
     }
 }

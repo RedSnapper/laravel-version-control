@@ -43,6 +43,19 @@ class Base extends TestCase
         $this->assertTrue($this->model->validateData());
     }
 
+    public function delete_model()
+    {
+        $this->setupModel();
+        $this->assertEquals(1, $this->model->vc_version);
+        $this->assertEquals(1, $this->model->vc_active);
+
+        $this->model->delete();
+
+        $model = $this->model::withoutGlobalScope($this->model)->find($this->model->uid);
+        $this->assertEquals(2, $model->vc_version);
+        $this->assertEquals(0, $model->vc_active);
+    }
+
     protected function createUser()
     {
         return User::createNew([

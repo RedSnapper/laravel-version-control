@@ -49,6 +49,27 @@ class PermissionTest extends Base implements BaseModelTest
     }
 
     /** @test */
+    public function can_be_restored_to_old_version()
+    {
+        $this->setupModel(["name" => "Version 1"]);
+        $this->assertEquals(1, $this->model->vc_version);
+
+        $this->setupModel(["name" => "Version 2"], $this->model->uid);
+        $this->assertEquals(2, $this->model->vc_version);
+
+        $this->model->restore(1);
+
+        $this->assertEquals("Version 1", $this->model->name);
+        $this->assertEquals(3, $this->model->vc_version);
+    }
+
+    /** @test */
+    public function can_be_deleted()
+    {
+        $this->delete_model();
+    }
+
+    /** @test */
     public function can_validate_its_own_version()
     {
         $this->validate_version();

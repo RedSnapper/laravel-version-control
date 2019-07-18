@@ -12,5 +12,9 @@ interface BaseModelTest
 
     public function can_validate_its_own_version();
 
+    public function can_be_restored_to_old_version();
+
+    public function can_be_deleted();
+
     public function can_validate_its_data();
 }

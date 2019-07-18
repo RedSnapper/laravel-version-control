@@ -39,22 +39,24 @@ class Versioned extends Model
          * we need to increment the branch too.
          */
         static::creating(function (Versioned $model) {
-            //$previous = (new Versioned())->setTable($model->getTable())
-            //    ->where('uid', $model->uid)
-            //    ->orderBy('vc_version','desc')
-            //    ->orderBy('vc_branch','desc')
-            //    ->first();
-dd('Here we go silly sausgae');
             if (!$model->is_new_model) {
-                $model->vc_version = $model->vc_version + 1;
-                $model->vc_parent = $model->vc_parent ?? $model->vc_version; // Only overwrite if not already set (during restore procedure this will be set)
 
-                // Set branch
-                $branch = (new Versioned())->setTable($model->getTable())
-                  ->where('uid', $model->uid)
-                  ->where('vc_parent', $model->vc_parent)
-                  ->orderBy('vc_branch', 'desc')->first();
-                $model->vc_branch = !empty($branch) ? $branch->vc_branch + 1 : 1;
+                // We need to grab previous in order to set the correct version
+                // Without the possibility of a restore function, we could do this without a query and just incrementing based on the vc_version passed from BaseModel version save
+                $previous = (new Versioned())->setTable($model->getTable())
+                    ->where('uid', $model->uid)
+                    ->orderBy('vc_version','desc')
+                    ->orderBy('vc_branch','desc')
+                    ->first();
+
+                $model->vc_version = $previous->vc_version + 1;
+
+                // Lets check if we are doing a restore, if we are - increment the branch. If not, just use same branch we were on before
+                if($model->vc_parent !== $previous->vc_version) {
+                    $model->vc_branch = $previous->vc_branch + 1;
+                } else {
+                    $model->vc_branch = $previous->vc_branch;
+                }
             } else {
                 $model->vc_active = true;
                 $model->vc_version = 1;
@@ -62,10 +64,9 @@ dd('Here we go silly sausgae');
                 $model->vc_branch = 1;
             }
 
+            // This would almost always fire, but I guess is possible for system initiated changes etc (during nightly builds or something)
             if (auth()->check()) {
                 $model->vc_modifier_uid = auth()->user()->uid;
-            } else {
-                $model->vc_modifier_uid = 'kads';
             }
         });
     }

@@ -58,13 +58,7 @@ class UserTest extends Base implements BaseModelTest
     }
 
     /** @test */
-    public function cannot_be_saved_outside_of_version_control()
-    {
-        $this->attempt_to_save_outside_of_version_control();
-    }
-
-    /** @test */
-    public function a_user_can_be_restored_to_old_version()
+    public function can_be_restored_to_old_version()
     {
         $this->setupModel(["username" => "Version 1"]);
         $this->assertEquals(1, $this->model->vc_version);
@@ -72,24 +66,16 @@ class UserTest extends Base implements BaseModelTest
         $this->setupModel(["username" => "Version 2"], $this->model->uid);
         $this->assertEquals(2, $this->model->vc_version);
 
-        $this->model::restore($this->model->uid, 1);
+        $this->model->restore(1);
 
-        $model = User::find($this->model->uid);
-        $this->assertEquals("Version 1", $model->username);
+        $this->assertEquals("Version 1", $this->model->username);
+        $this->assertEquals(3, $this->model->vc_version);
     }
 
     /** @test */
-    public function a_user_can_be_deleted()
+    public function can_be_deleted()
     {
-        $this->setupModel();
-        $this->assertEquals(1, $this->model->vc_version);
-        $this->assertEquals(1, $this->model->vc_active);
-
-        $this->model->delete();
-
-        $model = User::withoutGlobalScope($this->model)->find($this->model->uid);
-        $this->assertEquals(2, $model->vc_version);
-        $this->assertEquals(0, $model->vc_active);
+        $this->delete_model();
     }
 
     /** @test */
@@ -126,7 +112,7 @@ class UserTest extends Base implements BaseModelTest
     public function users_get_permissions_from_roles()
     {
         $permissionA = $this->createPermission(["name" => "can-see-the-ground"]);
-        $permissionB = $this->createPermission(["name" => "can-see-the-sky"]);
+        $this->createPermission(["name" => "can-see-the-sky"]);
 
         $roleA = $this->createRole(["name" => "Role A"]);
 
