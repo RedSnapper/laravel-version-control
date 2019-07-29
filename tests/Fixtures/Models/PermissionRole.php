@@ -2,7 +2,7 @@
 
 namespace Redsnapper\LaravelVersionControl\Tests\Fixtures\Models;
 
-use Redsnapper\LaravelVersionControl\Models\BaseModel;
+use Redsnapper\LaravelVersionControl\Models\BasePivotModel;
 
 /**
  * App\Models\PermissionRole
@@ -10,8 +10,9 @@ use Redsnapper\LaravelVersionControl\Models\BaseModel;
  * @property string $permission_uid
  * @property string $role_uid
  */
-class PermissionRole extends BaseModel
+class PermissionRole extends BasePivotModel
 {
+    protected $table = 'permission_roles';
     protected $versionsTable = 'permission_role_versions';
 
     protected $fillable = ['uid','vc_version','vc_active','permission_uid','role_uid'];

@@ -29,7 +29,9 @@ class Role extends BaseModel
     {
         return $this->belongsToMany(Permission::class, 'permission_roles',
             'role_uid',
-            'permission_uid','uid', 'uid');
+            'permission_uid','uid', 'uid')
+            ->withPivot(['uid','vc_version','vc_active'])
+            ->using(PermissionRole::class);
     }
 
     public function users()
@@ -56,7 +58,7 @@ class Role extends BaseModel
     {
         $permissionKey = $this->getPermissionKey($permission);
 
-        $this->attach($permissionKey, $this->uid, (new PermissionRole()));
+        $this->permissions()->attach($permissionKey);
 
         $this->forgetCachedPermissions();
     }

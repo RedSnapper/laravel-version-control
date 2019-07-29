@@ -4,19 +4,14 @@ namespace Redsnapper\LaravelVersionControl\Models;
 
 use Exception;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Pluralizer;
-use Redsnapper\LaravelVersionControl\Exceptions\ReadOnlyException;
 use Redsnapper\LaravelVersionControl\Models\Traits\ActiveOnlyModel;
 use Redsnapper\LaravelVersionControl\Models\Traits\NoDeletesModel;
-use Redsnapper\LaravelVersionControl\Models\Traits\NoUpdatesModel;
 use Redsnapper\LaravelVersionControl\Models\Traits\ReadOnlyModel;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
-use Redsnapper\LaravelVersionControl\Tests\Fixtures\Models\PermissionRole;
 
 /**
  * Class BaseModel
@@ -179,27 +174,21 @@ class BaseModel extends Model
     }
 
     /**
-     * @param  string  $key1
-     * @param  string  $key2
-     * @param  BaseModel  $pivot
-     * @return BaseModel
+     * Instantiate a new BelongsToMany relationship.
+     *
+     * @param  Builder  $query
+     * @param  Model  $parent
+     * @param  string  $table
+     * @param  string  $foreignPivotKey
+     * @param  string  $relatedPivotKey
+     * @param  string  $parentKey
+     * @param  string  $relatedKey
+     * @param  string  $relationName
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
      */
-    public function attach(string $key1, string $key2, BaseModel $pivot): BaseModel
+    protected function newBelongsToMany(Builder $query, Model $parent, $table, $foreignPivotKey, $relatedPivotKey,
+        $parentKey, $relatedKey, $relationName = null)
     {
-        $existing = $pivot->where($pivot->key1, $key1)
-          ->where($pivot->key2, $key2)
-          ->first();
-
-        if (!empty($existing)) {
-            $existing->vc_active = 1; // We should now simply need to set the pivot to active
-            $existing->save();
-
-            return $existing;
-        } else {
-            $pivot->fill([$pivot->key1 => $key1, $pivot->key2 => $key2, "vc_active" => 1]);
-            $pivot->save();
-
-            return $pivot;
-        }
+        return new BelongsToMany($query, $parent, $table, $foreignPivotKey, $relatedPivotKey, $parentKey, $relatedKey, $relationName);
     }
 }

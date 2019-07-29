@@ -82,36 +82,50 @@ class RoleTest extends Base implements BaseModelTest
     }
 
     /** @test */
-    public function roles_can_have_many_permissions()
+    public function can_attach_a_pivot_relation()
     {
-        $permissionA = $this->createPermission(["name" => "can-see-the-ground"]);
-        $permissionB = $this->createPermission(["name" => "can-see-the-sky"]);
-
         $this->setupModel(['name' => 'Role for bad necks']);
-        $this->model->givePermissionTo($permissionA);
+        $permissionA = $this->createPermission(["name" => "can-see-the-ground"]);
+
+        $this->assertFalse($this->model->hasPermission('can-see-the-ground'));
+
+        $this->model->permissions()->attach($permissionA);
 
         $this->assertTrue($this->model->hasPermission('can-see-the-ground'));
-        $this->assertFalse($this->model->hasPermission('can-see-the-sky'));
-
-        // Permissions update when adding new permissions to a role
-        $this->model->givePermissionTo($permissionB);
-        $this->assertTrue($this->model->hasPermission('can-see-the-sky'));
     }
 
     /** @test */
-    public function roles_can_have_permissions_removed()
+    public function can_detach_a_pivot_relation()
     {
+        $this->setupModel(['name' => 'Role for bad necks']);
+
+        $permissionA = $this->createPermission(["name" => "can-see-the-ground"]);
+
+        $this->model->permissions()->attach($permissionA);
+
+        $this->assertTrue($this->model->hasPermission('can-see-the-ground'));
+
+        // Permissions update when adding new permissions to a role
+        $this->model->permissions()->detach($permissionA);
+        $this->assertFalse($this->model->hasPermission('can-see-the-ground'));
+    }
+
+    /** @test */
+    public function can_sync_many_pivot_relations_at_once()
+    {
+        $this->setupModel(['name' => 'Role for bad necks']);
+
         $permissionA = $this->createPermission(["name" => "can-see-the-ground"]);
         $permissionB = $this->createPermission(["name" => "can-see-the-sky"]);
 
-        $this->setupModel(['name' => 'Role for bad necks']);
-        $this->model->givePermissionTo($permissionA);
+        $this->model->permissions()->sync([$permissionA->uid, $permissionB->uid]);
 
-        $this->assertTrue($this->model->hasPermission('can-see-the-ground'));
-        $this->assertFalse($this->model->hasPermission('can-see-the-sky'));
+        $this->assertTrue($this->model->hasPermission($permissionA));
+        $this->assertTrue($this->model->hasPermission($permissionB));
 
-        // Permissions update when adding new permissions to a role
-        $this->model->removePermission($permissionA);
-        $this->assertFalse($this->model->hasPermission('can-see-the-ground'));
+        $this->model->permissions()->sync($permissionA);
+
+        $this->assertTrue($this->model->hasPermission($permissionA));
+        $this->assertFalse($this->model->hasPermission($permissionB));
     }
 }
