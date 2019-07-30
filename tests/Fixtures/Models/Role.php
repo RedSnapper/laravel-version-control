@@ -36,9 +36,7 @@ class Role extends BaseModel
 
     public function users()
     {
-        return $this->belongsToMany(User::class, 'role_users',
-            'role_uid',
-            'user_uid','uid', 'uid');
+        return $this->hasMany(User::class);
     }
 
     public static function activeRoles()
@@ -72,11 +70,7 @@ class Role extends BaseModel
     {
         $permissionKey = $this->getPermissionKey($permission);
 
-        $permissionRole = PermissionRole::where('permission_uid', $permissionKey)
-            ->where('role_uid', $this->uid)
-            ->firstOrFail();
-
-        $permissionRole->delete();
+        $this->permissions()->detach($permissionKey);
 
         $this->forgetCachedPermissions();
 

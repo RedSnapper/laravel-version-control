@@ -49,14 +49,16 @@ class TestCase extends OrchestraTestCase
     {
         include_once __DIR__.'/Fixtures/database/migrations/create_users_table.php';
         include_once __DIR__.'/Fixtures/database/migrations/create_roles_table.php';
-        include_once __DIR__.'/Fixtures/database/migrations/create_role_user_table.php';
         include_once __DIR__.'/Fixtures/database/migrations/create_permissions_table.php';
         include_once __DIR__.'/Fixtures/database/migrations/create_permission_role_table.php';
+        include_once __DIR__.'/Fixtures/database/migrations/create_jobs_table.php';
+        include_once __DIR__.'/Fixtures/database/migrations/create_posts_table.php';
 
         (new CreateUsersTable())->up();
         (new CreateRolesTable())->up();
-        (new CreateRoleUserTable())->up();
         (new CreatePermissionsTable())->up();
         (new CreatePermissionRoleTable())->up();
+        (new CreateJobsTable())->up();
+        (new CreatePostsTable())->up();
     }
 }

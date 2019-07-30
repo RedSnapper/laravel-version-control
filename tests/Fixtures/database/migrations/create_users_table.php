@@ -15,18 +15,11 @@ class CreateUsersTable extends Migration
     {
         $tables = $this->makeVcTables("user");
 
-        //TODO: Look at if this is possible instead
-//        $tables = $this->makeVcTables("user", function($table) {
-//
-//        });
-
         foreach($tables as $table) {
             $this->schema->table($table, function(Blueprint $table) {
-                $table->string('username')->default(''); // Cant add empty not null columns in sqlite
-                $table->string('password')->default('');
+                $table->uuid('role_uid')->default(''); // sqlite doesnt allow empty not null fields to be added after table creation?? Bloody weird.
                 $table->string('email', 125)->default('');
-                $table->string('emailp')->nullable();
-                $table->string('active', 2)->default('on');
+                $table->string('password')->default('');
                 $table->rememberToken();
             });
         }

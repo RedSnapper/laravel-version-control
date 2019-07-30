@@ -10,6 +10,6 @@ class ActiveScope implements Scope
 {
     public function apply(Builder $builder, Model $model)
     {
-        $builder->where('vc_active', 1);
+        $builder->where($model->getTable() . ".vc_active", 1);
     }
 }

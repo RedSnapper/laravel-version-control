@@ -2,11 +2,10 @@
 
 namespace Redsnapper\LaravelVersionControl\Tests\Fixtures\Models;
 
-use Redsnapper\LaravelVersionControl\Exceptions\Auth\PermissionDoesNotExist;
+use Exception;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Redsnapper\LaravelVersionControl\Models\BaseModel;
 use Redsnapper\LaravelVersionControl\Models\Traits\BelongsToRoles;
-use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Notifications\DatabaseNotificationCollection;
 use Illuminate\Notifications\Notifiable;
@@ -21,6 +20,7 @@ use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
 /**
  * App\Models\User
  *
+ * @property string $role_uid
  * @property string $username
  * @property string $email
  * @property string $emailp
@@ -43,7 +43,7 @@ class User extends BaseModel implements
 
     protected $versionsTable = 'user_versions';
 
-    protected $fillable = ['vc_version','vc_active','username','email','emailp','password','active'];
+    protected $fillable = ['uid','vc_version','vc_active','role_uid','email','password'];
     protected $hidden = ['remember_token'];
 
     public function isCurrentUser(): bool
@@ -51,61 +51,38 @@ class User extends BaseModel implements
         return $this->uid === auth()->user()->uid;
     }
 
-    /**
-     * @return BelongsToMany|Role[]
-     */
-    public function roles()
+    public function posts()
     {
-        return $this->belongsToMany(Role::class,
-            'role_users',
-            'user_uid',
-            'role_uid',
-            'uid',
-            'uid'
-        );
+        return $this->hasMany(Post::class);
+    }
+
+    public function job()
+    {
+        return $this->hasOne(Job::class);
+    }
+
+    /**
+     * @return BelongsTo
+     */
+    public function role()
+    {
+        return $this->belongsTo(Role::class);
     }
 
     /**
      * @param  string  $permission
      * @return bool
-     * @throws \Exception
+     * @throws Exception
      */
     public function hasPermissionTo(string $permission): bool
     {
         $permission = Permission::findByName($permission);
 
         if ($permission) {
-            return $permission->roles()->pluck('role_uid')
-                ->intersect($this->roles()->pluck('role_uid'))->isNotEmpty();
+            return $permission->role()->pluck('role_uid')
+                ->intersect($this->role_uid)->isNotEmpty();
         }
 
         return false;
-    }
-
-    /**
-     * @param  Role  $role
-     * @return User
-     */
-    public function assignRole(Role $role): self
-    {
-        //TODO: Consider a possible future need for having new versions of users when attaching/detaching roles
-        $this->attach($role->uid, $this->uid, (new RoleUser()));
-
-        return $this;
-    }
-
-    /**
-     * @param  Role  $role
-     * @return User
-     */
-    public function unAssignRole(Role $role): self
-    {
-        $roleUser = RoleUser::where('role_uid', $role->uid)
-            ->where('user_uid', $this->uid)
-            ->firstOrFail();
-
-        $roleUser->delete();
-
-        return $this;
     }
 }

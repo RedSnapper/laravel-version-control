@@ -5,6 +5,9 @@ namespace Redsnapper\LaravelVersionControl\Tests;
 use Redsnapper\LaravelVersionControl\Exceptions\ReadOnlyException;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Redsnapper\LaravelVersionControl\Tests\Fixtures\Models\Job;
+use Redsnapper\LaravelVersionControl\Tests\Fixtures\Models\PermissionRole;
+use Redsnapper\LaravelVersionControl\Tests\Fixtures\Models\Post;
 use Redsnapper\LaravelVersionControl\Tests\Fixtures\Models\User;
 use Redsnapper\LaravelVersionControl\Tests\Fixtures\Models\Role;
 use Redsnapper\LaravelVersionControl\Tests\Fixtures\Models\Permission;
@@ -13,91 +16,68 @@ class Base extends TestCase
 {
     use RefreshDatabase, WithFaker;
 
-    protected $model;
-
-    /**
-     * @param $object
-     */
-    public function create_new_record($object)
+    protected function createUser(array $overrides = []): User
     {
-        $this->setupModel();
-        $this->assertIsObject($this->model, $object);
-    }
-
-    public function create_new_version_of_existing_record()
-    {
-        $this->setupModel();
-        $this->setupModel([], $this->model->uid);
-        $this->assertEquals(2, $this->model->versions()->count());
-    }
-
-    public function validate_version()
-    {
-        $this->setupModel();
-        $this->assertTrue($this->model->validateVersion());
-    }
-
-    public function validate_data()
-    {
-        $this->setupModel();
-        $this->assertTrue($this->model->validateData());
-    }
-
-    public function delete_model()
-    {
-        $this->setupModel();
-        $this->assertEquals(1, $this->model->vc_version);
-        $this->assertEquals(1, $this->model->vc_active);
-
-        $this->model->delete();
-
-        $model = $this->model::withoutGlobalScope($this->model)->find($this->model->uid);
-        $this->assertEquals(2, $model->vc_version);
-        $this->assertEquals(0, $model->vc_active);
-    }
-
-    protected function createUser()
-    {
-        return User::createNew([
+        $user = (new User())->fill(array_merge([
             'vc_active' => 1,
             'vc_modifier_uid' => null,
-            'username' => $this->faker->firstName,
+            'role_uid' => ($this->createRole())->uid,
             'email' => $this->faker->unique()->safeEmail,
-            'emailp' => $this->faker->unique()->safeEmail,
             'password' => 'secret',
-            'active' => 'on'
-        ]);
+        ], $overrides));
+
+        $user->save();
+        return $user;
     }
 
-    protected function createPermission(array $overrides = [])
+    protected function createPermission(array $overrides = []): Permission
     {
         $permission = (new Permission())->fill(array_merge([
             'vc_active' => 1,
             'vc_modifier_uid' => null,
             'name' => $this->faker->jobTitle,
-            'active' => 'on'
         ], $overrides));
 
         $permission->save();
         return $permission;
     }
 
-    protected function createRole(array $overrides = [])
+    protected function createRole(array $overrides = []): Role
     {
         $role = (new Role())->fill(array_merge([
             'vc_active' => 1,
             'vc_modifier_uid' => null,
-            'category_uid' => $this->faker->word,
             'name' => $this->faker->jobTitle,
-            'hidden' => rand(0,1),
-            'level' => rand(0,30),
-            'view' => rand(0,800),
-            'comment' => $this->faker->sentence,
-            'alphasort' => array_rand(['m50','z50','d50','j10','c40','b30']),
-            'active' => 'on'
         ], $overrides));
 
         $role->save();
         return $role;
+    }
+
+    protected function createJob(array $overrides = []): Job
+    {
+        $job = (new Job())->fill(array_merge([
+            'vc_active' => 1,
+            'vc_modifier_uid' => null,
+            'user_uid' => ($this->createUser())->uid,
+            'title' => $this->faker->word,
+        ], $overrides));
+
+        $job->save();
+        return $job;
+    }
+
+    protected function createPost(array $overrides = []): Post
+    {
+        $post = (new Post())->fill(array_merge([
+            'vc_active' => 1,
+            'vc_modifier_uid' => null,
+            'user_uid' => ($this->createUser())->uid,
+            'title' => $this->faker->sentence,
+            'content' => $this->faker->paragraph,
+        ], $overrides));
+
+        $post->save();
+        return $post;
     }
 }

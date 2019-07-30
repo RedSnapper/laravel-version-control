@@ -12,6 +12,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
+use Redsnapper\LaravelVersionControl\Scopes\ActiveScope;
 
 /**
  * Class BaseModel
@@ -27,8 +28,7 @@ class BaseModel extends Model
     protected $primaryKey = 'uid';
     public $incrementing = false;
 
-    use ActiveOnlyModel,
-      ReadOnlyModel,
+    use ReadOnlyModel,
       NoDeletesModel;
 
     public static function boot()
@@ -42,6 +42,8 @@ class BaseModel extends Model
         static::deleting(function (BaseModel $model) {
             return $model->createDeleteVersion();
         });
+
+        static::addGlobalScope(new ActiveScope());
     }
 
     protected function createVersion(): bool
@@ -96,13 +98,10 @@ class BaseModel extends Model
 
     protected function createDeleteVersion()
     {
-        $version = $this->getVersionInstance();
-        $version->fill($this->attributes);
-        $version->vc_active = false;
+        $this->vc_active = false;
+        $this->save();
 
-        if ($version->save()) {
-            $this->vc_version = $version->vc_version;
-        }
+        return false;
     }
 
     /**

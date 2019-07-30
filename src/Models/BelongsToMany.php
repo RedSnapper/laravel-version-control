@@ -17,7 +17,10 @@ class BelongsToMany extends \Illuminate\Database\Eloquent\Relations\BelongsToMan
     public function attach($id, array $attributes = [], $touch = true)
     {
         $id = $this->parseId($id);
-        $this->setPivotActiveState($id, 1);
+        $this->using::updateOrCreate([
+            $this->foreignPivotKey => $this->parent->uid,
+            $this->relatedPivotKey => $id
+        ], ['vc_active' => 1]);
     }
 
     /**
@@ -37,21 +40,13 @@ class BelongsToMany extends \Illuminate\Database\Eloquent\Relations\BelongsToMan
             }
 
             foreach ($ids as $id) {
-                $this->setPivotActiveState($id, 0);
+                $this->using::where($this->relatedPivotKey, $id)
+                    ->where($this->foreignPivotKey, $this->parent->uid)
+                    ->delete();
             }
 
             return count($ids);
         }
-    }
-
-    private function setPivotActiveState(string $id, int $active)
-    {
-        $this->using::updateOrCreate([
-            $this->foreignPivotKey => $this->parent->uid,
-            $this->relatedPivotKey => $id
-        ],[
-            'vc_active' => $active
-        ]);
     }
 
     /**
