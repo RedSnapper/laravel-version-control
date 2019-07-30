@@ -88,7 +88,7 @@ class VersionControlBaseModelTest extends Base
         $this->model->fresh();
 
         $this->assertEquals(2, $this->model->vc_version);
-        $this->assertEquals(0, $this->model->vc_active);
+        $this->assertEquals(false, $this->model->vc_active);
 
         // Cant get this user now as they have been deleted...
         $model = User::find($this->model->uid);

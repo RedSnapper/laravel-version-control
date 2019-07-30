@@ -39,10 +39,6 @@ class BaseModel extends Model
             return $model->createVersion();
         });
 
-        static::deleting(function (BaseModel $model) {
-            return $model->createDeleteVersion();
-        });
-
         static::addGlobalScope(new ActiveScope());
     }
 
@@ -96,14 +92,6 @@ class BaseModel extends Model
         return $this;
     }
 
-    protected function createDeleteVersion()
-    {
-        $this->vc_active = false;
-        $this->save();
-
-        return false;
-    }
-
     /**
      * @return string
      */
@@ -141,9 +129,8 @@ class BaseModel extends Model
 
     protected function performDeleteOnModel()
     {
-
-        $query = $this->setKeysForSaveQuery($this->newModelQuery());
-        $query->update(['vc_version' => $this->vc_version, 'vc_active' => false]);
+        $this->vc_active = false;
+        $this->save();
 
         $this->exists = false;
     }
