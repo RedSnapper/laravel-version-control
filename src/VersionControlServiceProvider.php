@@ -23,7 +23,7 @@ class VersionControlServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        $this->publishes([__DIR__ . '/config' => app_path()], 'redsnapper-laravel-version-control');
+        $this->publishes([__DIR__ . '/config' => config_path()], 'redsnapper-laravel-version-control');
         $this->publishes([__DIR__ => app_path()], 'redsnapper-laravel-version-control-src');
     }
 }
