@@ -78,7 +78,7 @@ class Versioned extends Model
 
     public function modifyingUser(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'vc_modifier_uid', 'uid');
+        return $this->belongsTo(config('rs-version-control.user'), 'vc_modifier_uid', 'uid');
     }
 
     public function setBaseModel($name)
