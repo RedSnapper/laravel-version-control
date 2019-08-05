@@ -1,5 +1,4 @@
 <?php
-namespace Redsnapper\LaravelVersionControl\Tests;
 
 use Redsnapper\LaravelVersionControl\Database\Blueprint;
 use Redsnapper\LaravelVersionControl\Database\Migration;

@@ -13,7 +13,8 @@ class TestCase extends OrchestraTestCase
         parent::setUp();
 
         // Note: this also flushes the cache from within the migration
-        $this->setUpDatabase($this->app);
+        //$this->setUpDatabase($this->app);
+        $this->loadMigrationsFrom(realpath(__DIR__ . '/Fixtures/database/migrations'));
     }
 
     /**

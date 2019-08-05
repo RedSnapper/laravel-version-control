@@ -1,10 +1,9 @@
 <?php
-namespace Redsnapper\LaravelVersionControl\Tests;
 
 use Redsnapper\LaravelVersionControl\Database\Blueprint;
 use Redsnapper\LaravelVersionControl\Database\Migration;
 
-class CreatePostsTable extends Migration
+class CreateJobsTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,13 +12,12 @@ class CreatePostsTable extends Migration
      */
     public function up()
     {
-        $tables = $this->makeVcTables("post");
+        $tables = $this->makeVcTables("job");
 
         foreach($tables as $table) {
             $this->schema->table($table, function(Blueprint $table) {
                 $table->uuid('user_uid')->default(''); // Cant add empty not null columns in sqlite
                 $table->string('title')->default(''); // Cant add empty not null columns in sqlite
-                $table->string('content')->default(''); // Cant add empty not null columns in sqlite
             });
         }
     }
@@ -31,6 +29,6 @@ class CreatePostsTable extends Migration
      */
     public function down()
     {
-        $this->dropVcTables("post");
+        $this->dropVcTables("job");
     }
 }
