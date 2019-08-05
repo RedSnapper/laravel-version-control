@@ -9,6 +9,7 @@ class Blueprint extends LaravelBlueprint
     public function vcVersionTableColumns($tableName)
     {
         $this->uuid('uid');
+        //$this->uuid('model_uid'); // TODO Add field
         $this->unsignedInteger('vc_version');
         $this->unsignedInteger('vc_parent')->nullable();
         $this->unsignedInteger('vc_branch');

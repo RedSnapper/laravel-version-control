@@ -15,12 +15,10 @@ class CreateRolesTable extends Migration
      */
     public function up()
     {
-        $tables = $this->makeVcTables("role");
-        foreach($tables as $table) {
-            $this->schema->table($table, function(Blueprint $table) {
-                $table->string('name')->default(''); // Cant add empty not null columns in sqlite
-            });
-        }
+        $this->makeVcTables("role",function(Blueprint $table){
+            $table->string('name');
+        });
+
     }
 
     /**

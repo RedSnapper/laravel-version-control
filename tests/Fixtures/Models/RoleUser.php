@@ -17,7 +17,6 @@ use Redsnapper\LaravelVersionControl\Models\BasePivotModel;
 class RoleUser extends BasePivotModel
 {
     protected $table = 'role_users';
-    protected $versionsTable = 'role_user_versions';
 
     protected $fillable = ['uid','vc_version','vc_active','role_uid','user_uid'];
 

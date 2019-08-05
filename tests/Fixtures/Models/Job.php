@@ -13,8 +13,6 @@ use Redsnapper\LaravelVersionControl\Models\BaseModel;
  */
 class Job extends BaseModel
 {
-    protected $versionsTable = 'job_versions';
-
     protected $fillable = ['uid','vc_version','vc_active','user_uid','title'];
 
     public function user()

@@ -2,6 +2,7 @@
 
 namespace Redsnapper\LaravelVersionControl\Database;
 
+use Closure;
 use Illuminate\Database\Migrations\Migration as LaravelMigration;
 use Illuminate\Support\Pluralizer;
 
@@ -29,18 +30,26 @@ abstract class Migration extends LaravelMigration
      * @param  string  $modelName
      * @return array
      */
-    public function makeVcTables(string $modelName)
+    public function makeVcTables(string $modelName,Closure $modelClosure = null, Closure $versionClosure = null)
     {
         $plural = Pluralizer::plural($modelName, 2);
 
-        $this->schema->create("{$modelName}_versions", function (Blueprint $table) use ($modelName) {
-            $table->vcVersionTableColumns("{$modelName}_versions");
-            $table->timestamps();
-        });
-
-        $this->schema->create($plural, function (Blueprint $table) use ($plural) {
+        $this->schema->create($plural, function (Blueprint $table) use ($plural,$modelClosure) {
             $table->vcKeyTableColumns($plural);
             $table->timestamps();
+            if(is_callable($modelClosure)){
+                $modelClosure($table);
+            }
+        });
+
+        $closure = $versionClosure ?? $modelClosure;
+
+        $this->schema->create("{$modelName}_versions", function (Blueprint $table) use ($modelName,$closure) {
+            $table->vcVersionTableColumns("{$modelName}_versions");
+            $table->timestamps();
+            if(is_callable($closure)){
+                $closure($table);
+            }
         });
 
         return ["{$modelName}_versions", $plural];

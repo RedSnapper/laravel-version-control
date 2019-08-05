@@ -41,8 +41,6 @@ class User extends BaseModel implements
         MustVerifyEmail,
         BelongsToRoles;
 
-    protected $versionsTable = 'user_versions';
-
     protected $fillable = ['uid','vc_version','vc_active','role_uid','email','password'];
     protected $hidden = ['remember_token'];
 

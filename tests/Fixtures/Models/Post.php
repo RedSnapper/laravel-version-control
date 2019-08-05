@@ -15,7 +15,6 @@ use Redsnapper\LaravelVersionControl\Tests\Fixtures\TestPermissionsRegistrar;
  */
 class Post extends BaseModel
 {
-    protected $versionsTable = 'post_versions';
 
     protected $fillable = ['uid','vc_version','vc_active','user_uid','title','content'];
 

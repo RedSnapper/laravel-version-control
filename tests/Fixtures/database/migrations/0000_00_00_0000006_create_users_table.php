@@ -12,16 +12,17 @@ class CreateUsersTable extends Migration
      */
     public function up()
     {
-        $tables = $this->makeVcTables("user");
-
-        foreach($tables as $table) {
-            $this->schema->table($table, function(Blueprint $table) {
-                $table->uuid('role_uid')->default(''); // sqlite doesnt allow empty not null fields to be added after table creation?? Bloody weird.
-                $table->string('email', 125)->default('');
-                $table->string('password')->default('');
-                $table->rememberToken();
-            });
-        }
+        $this->makeVcTables("user",function(Blueprint $table){
+            $table->uuid('role_uid')->nullable();
+            $table->string('email')->unique();
+            $table->string('password');
+            $table->rememberToken();
+        },function(Blueprint $table){
+            $table->uuid('role_uid')->nullable();
+            $table->string('email');
+            $table->string('password');
+            $table->rememberToken();
+        });
     }
 
     /**

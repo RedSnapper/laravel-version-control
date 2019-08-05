@@ -20,7 +20,6 @@ use Redsnapper\LaravelVersionControl\Tests\Fixtures\TestPermissionsRegistrar;
  */
 class Role extends BaseModel
 {
-    protected $versionsTable = 'role_versions';
 
     protected $fillable = ['uid','vc_version','vc_active','category_uid','name','hidden','level',
         'view','comment','alphasort','active'];

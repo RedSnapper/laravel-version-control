@@ -20,7 +20,7 @@ use Redsnapper\LaravelVersionControl\Tests\Fixtures\TestPermissionsRegistrar;
  */
 class Permission extends BaseModel
 {
-    protected $versionsTable = 'permission_versions';
+
 
     protected $fillable = ['uid','vc_version','vc_active','name','active'];
 

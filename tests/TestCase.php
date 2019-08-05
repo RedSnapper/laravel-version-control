@@ -12,8 +12,6 @@ class TestCase extends OrchestraTestCase
     {
         parent::setUp();
 
-        // Note: this also flushes the cache from within the migration
-        //$this->setUpDatabase($this->app);
         $this->loadMigrationsFrom(realpath(__DIR__ . '/Fixtures/database/migrations'));
     }
 
@@ -40,26 +38,5 @@ class TestCase extends OrchestraTestCase
             'database' => ':memory:',
             'prefix'   => '',
         ]);
-    }
-    /**
-     * Set up the database.
-     *
-     * @param Application $app
-     */
-    protected function setUpDatabase($app)
-    {
-        include_once __DIR__.'/Fixtures/database/migrations/create_users_table.php';
-        include_once __DIR__.'/Fixtures/database/migrations/create_roles_table.php';
-        include_once __DIR__.'/Fixtures/database/migrations/create_permissions_table.php';
-        include_once __DIR__.'/Fixtures/database/migrations/create_permission_role_table.php';
-        include_once __DIR__.'/Fixtures/database/migrations/create_jobs_table.php';
-        include_once __DIR__.'/Fixtures/database/migrations/create_posts_table.php';
-
-        (new CreateUsersTable())->up();
-        (new CreateRolesTable())->up();
-        (new CreatePermissionsTable())->up();
-        (new CreatePermissionRoleTable())->up();
-        (new CreateJobsTable())->up();
-        (new CreatePostsTable())->up();
     }
 }

@@ -12,14 +12,10 @@ class CreateJobsTable extends Migration
      */
     public function up()
     {
-        $tables = $this->makeVcTables("job");
-
-        foreach($tables as $table) {
-            $this->schema->table($table, function(Blueprint $table) {
-                $table->uuid('user_uid')->default(''); // Cant add empty not null columns in sqlite
-                $table->string('title')->default(''); // Cant add empty not null columns in sqlite
-            });
-        }
+        $this->makeVcTables("job",function(Blueprint $table){
+            $table->uuid('user_uid');
+            $table->string('title');
+        });
     }
 
     /**
