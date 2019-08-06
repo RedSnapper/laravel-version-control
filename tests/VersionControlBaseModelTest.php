@@ -2,6 +2,7 @@
 
 namespace Redsnapper\LaravelVersionControl\Tests;
 
+use Redsnapper\LaravelVersionControl\Models\Versioned;
 use Redsnapper\LaravelVersionControl\Tests\Fixtures\Models\User;
 
 class VersionControlBaseModelTest extends Base
@@ -31,67 +32,94 @@ class VersionControlBaseModelTest extends Base
         }
 
         $this->model->save();
+
+        return $this->model;
     }
 
     /** @test */
     public function can_create_new_record()
     {
-        $this->setupModel();
-        $this->assertInstanceOf(User::class, $this->model);
+        $user = factory(User::class)->create([
+          'email' => 'john@example.com',
+        ]);
+
+        $this->assertEquals('john@example.com',$user->email);
+        $this->assertTrue($user->vc_active);
+        $this->assertCount(1,$user->versions);
+
+        $version = $user->versions->first();
+        $this->assertEquals('john@example.com',$version->email);
+        $this->assertTrue($version->isActive());
+        $this->assertFalse($version->isDeleted());
+
+        $this->assertEquals($version->getKey(),$user->currentVersion->getKey());
+
     }
 
     /** @test */
     public function can_create_new_version_of_existing_record()
     {
-        $this->setupModel();
-        $this->setupModel([], $this->model->uid);
-        $this->assertEquals(2, $this->model->versions()->count());
-    }
+        $user = factory(User::class)->create([
+          'email' => 'john@example.com',
+        ]);
+        $user->email = "jane@example.com";
+        $user->save();
 
-    /** @test */
-    public function can_validate_its_data()
-    {
-        $this->setupModel();
-        $this->assertTrue($this->model->validateData());
-    }
+        $this->assertCount(2,$user->versions);
 
-    /** @test */
-    public function can_validate_its_own_version()
-    {
-        $this->setupModel();
-        $this->assertTrue($this->model->validateVersion());
-    }
+        tap($user->currentVersion,function(Versioned $version) use($user){
+            $this->assertEquals('jane@example.com',$version->email);
+            $this->assertTrue($version->isActive());
+            $this->assertEquals($user->password,$version->password);
+            $this->assertEquals($version->getKey(),$user->currentVersion->getKey());
+        });
 
-    /** @test */
-    public function can_be_restored_to_old_version()
-    {
-        $this->setupModel(["email" => "version1@tests.com"]);
-        $this->assertEquals(1, $this->model->vc_version);
-
-        $this->setupModel(["email" => "version2@tests.com"], $this->model->uid);
-        $this->assertEquals(2, $this->model->vc_version);
-
-        $this->model->restore(1);
-
-        $this->assertEquals("version1@tests.com", $this->model->email);
-        $this->assertEquals(3, $this->model->vc_version);
     }
 
     /** @test */
     public function can_be_deleted()
     {
-        $this->setupModel();
-        $this->assertEquals(1, $this->model->vc_version);
-        $this->assertEquals(1, $this->model->vc_active);
+        $user = factory(User::class)->create();
+        $user->delete();
 
-        $this->model->delete();
-        $this->model->fresh();
+        $this->assertCount(2,$user->versions);
+        $this->assertFalse($user->exists);
 
-        $this->assertEquals(2, $this->model->vc_version);
-        $this->assertEquals(false, $this->model->vc_active);
+        tap($user->currentVersion,function(Versioned $version){
+            $this->assertEquals(2,$version->vc_version);
+            $this->assertTrue($version->isDeleted());
+        });
 
-        // Cant get this user now as they have been deleted...
-        $model = User::find($this->model->uid);
-        $this->assertNull($model);
+        $this->assertNull(User::find($user->getKey()));
+
     }
+
+    ///** @test */
+    //public function can_validate_its_data()
+    //{
+    //    $this->setupModel();
+    //    $this->assertTrue($this->model->validateData());
+    //}
+    //
+    ///** @test */
+    //public function can_validate_its_own_version()
+    //{
+    //    $this->setupModel();
+    //    $this->assertTrue($this->model->validateVersion());
+    //}
+
+    /** @test */
+    //public function can_be_restored_to_old_version()
+    //{
+    //    $this->setupModel(["email" => "version1@tests.com"]);
+    //    $this->assertEquals(1, $this->model->vc_version);
+    //
+    //    $this->setupModel(["email" => "version2@tests.com"], $this->model->uid);
+    //    $this->assertEquals(2, $this->model->vc_version);
+    //
+    //    $this->model->restore(1);
+    //
+    //    $this->assertEquals("version1@tests.com", $this->model->email);
+    //    $this->assertEquals(3, $this->model->vc_version);
+    //}
 }

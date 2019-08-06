@@ -4,6 +4,8 @@ namespace Redsnapper\LaravelVersionControl\Models;
 
 use Exception;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Pluralizer;
 use Redsnapper\LaravelVersionControl\Models\Traits\ActiveOnlyModel;
 use Redsnapper\LaravelVersionControl\Models\Traits\NoDeletesModel;
@@ -42,23 +44,24 @@ class BaseModel extends Model
         static::addGlobalScope(new ActiveScope());
     }
 
+    /**
+     * Create a new version
+     *
+     * @return bool
+     */
     protected function createVersion(): bool
     {
         $version = $this->getVersionInstance();
-        $version->fill($this->attributes);
 
         if (!$this->exists) {
-            $uid = Str::uuid();
-            $version->uid = $uid;
+            $version->createFromNew($this->attributes);
         } else {
-            $version->uid = $this->uid;
-            // If we're saving an existing record, then the parent of version must be set before we try to save it... the VC version will be incremented on save
-            $version->vc_parent = $this->vc_version;
+            $version->createFromExisting($this->attributes);
         }
 
         if ($version->save()) {
-            $this->uid = $version->uid;
-            $this->vc_version = $version->vc_version;
+            $this->uid = $version->model_uid;
+            $this->vc_version_uid = $version->uid;
             $this->vc_active = $version->vc_active;
 
             return true;
@@ -119,12 +122,28 @@ class BaseModel extends Model
     {
         $instance = $this->getVersionInstance();
 
-        $foreignKey = "uid";
+        $foreignKey = "model_uid";
         $localKey = "uid";
 
         return $this->newHasMany(
           $instance->newQuery(), $this, $instance->getTable().'.'.$foreignKey, $localKey
         );
+    }
+
+    /**
+     * Fetches the version history for the key table model. For this to work, table and model naming convention must be
+     * kept to (key table = users, version table = user_versions)
+     *
+     * @return HasOne
+     */
+    public function currentVersion(): HasOne
+    {
+        $instance = $this->getVersionInstance();
+
+        $foreignKey = "uid";
+        $localKey = "vc_version_uid";
+
+        return $this->newHasOne($instance->newQuery(), $this, $instance->getTable().'.'.$foreignKey, $localKey);
     }
 
     protected function performDeleteOnModel()

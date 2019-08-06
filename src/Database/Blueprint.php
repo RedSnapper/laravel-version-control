@@ -9,14 +9,14 @@ class Blueprint extends LaravelBlueprint
     public function vcVersionTableColumns($tableName)
     {
         $this->uuid('uid');
-        //$this->uuid('model_uid'); // TODO Add field
-        $this->unsignedInteger('vc_version');
+        $this->uuid('model_uid');
+        $this->unsignedInteger('vc_version')->default(1);
         $this->unsignedInteger('vc_parent')->nullable();
-        $this->unsignedInteger('vc_branch');
-        $this->boolean('vc_active');
+        $this->unsignedInteger('vc_branch')->default(1);
+        $this->boolean('vc_active')->default(true);
         $this->uuid('vc_modifier_uid')->nullable();
-        $this->primary(['uid','vc_version'], "{$tableName}_vc_primary_key");
-        $this->unique(['uid','vc_parent','vc_branch'], "{$tableName}_vc_uid");
+        $this->primary(['uid'], "{$tableName}_vc_primary_key");
+        //$this->unique(['uid','vc_parent','vc_branch'], "{$tableName}_vc_uid");
     }
 
     public function vcVersionPivotTableColumns(string $key1, string $key2, string $tableName)
@@ -36,8 +36,8 @@ class Blueprint extends LaravelBlueprint
     public function vcKeyTableColumns(string $tableName)
     {
         $this->uuid('uid')->unique();
-        $this->unsignedInteger('vc_version');
-        $this->boolean('vc_active');
+        $this->unsignedInteger('vc_version_uid');
+        $this->boolean('vc_active')->default(1);
         $this->primary('uid', "{$tableName}_vc_primary_key");
     }
 

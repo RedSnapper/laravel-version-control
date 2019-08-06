@@ -2,7 +2,9 @@
 
 namespace Redsnapper\LaravelVersionControl\Models;
 
-use Redsnapper\LaravelVersionControl\Models\Traits\HasCompositePrimaryKey;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 use Redsnapper\LaravelVersionControl\Models\Traits\NoDeletesModel;
 use Redsnapper\LaravelVersionControl\Models\Traits\NoUpdatesModel;
 use Carbon\Carbon;
@@ -21,14 +23,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class Versioned extends Model
 {
-    protected $primaryKey = ['uid', 'vc_version'];
+    protected $primaryKey = 'uid';
     public $incrementing = false;
     protected $baseModel;
     protected $guarded = [];
 
     use NoDeletesModel,
-      NoUpdatesModel,
-      HasCompositePrimaryKey;
+      NoUpdatesModel;
 
     public static function boot()
     {
@@ -39,39 +40,52 @@ class Versioned extends Model
          * we need to increment the branch too.
          */
         static::creating(function (Versioned $model) {
-            if (!$model->is_new_model) {
 
-                // We need to grab previous in order to set the correct version
-                // Without the possibility of a restore function, we could do this without a query and just incrementing based on the vc_version passed from BaseModel version save
-                $previous = (new Versioned())->setTable($model->getTable())
-                    ->where('uid', $model->uid)
-                    ->orderBy('vc_version','desc')
-                    ->orderBy('vc_branch','desc')
-                    ->first();
-
-                $model->vc_version = $previous->vc_version + 1;
-
-                // Lets check if we are doing a restore, if we are - increment the branch. If not, just use same branch we were on before
-                if($model->vc_parent !== $previous->vc_version) {
-                    $model->vc_branch = $previous->vc_branch + 1;
-                } else {
-                    $model->vc_branch = $previous->vc_branch;
-                }
-            } else {
-                $model->vc_active = true;
-                $model->vc_version = 1;
-                $model->vc_parent = null;
-                $model->vc_branch = 1;
-            }
-
-            // This would almost always fire, but I guess is possible for system initiated changes etc (during nightly builds or something)
+            $uid = Str::uuid();
+            $model->uid = $uid;
             if (auth()->check()) {
                 $model->vc_modifier_uid = auth()->user()->uid;
             }
         });
     }
 
-    public function getIsNewModelAttribute():bool
+    /**
+     * Create version from a new model
+     *
+     * @param  array  $attributes
+     * @return Versioned
+     */
+    public function createFromNew(array $attributes):self
+    {
+        $this->fill($attributes);
+        $this->model_uid = Str::uuid();
+        $this->vc_active = true;
+        $this->vc_parent = null;
+        $this->vc_branch = 1;
+
+        return $this;
+    }
+
+    /**
+     * Create version from existing model
+     *
+     * @param  array  $attributes
+     * @return Versioned
+     */
+    public function createFromExisting(array $attributes):self
+    {
+        $this->fill(Arr::except($attributes,['vc_version_uid']));
+        $this->model_uid = $attributes['uid'];
+        $this->vc_parent = $attributes['vc_version_uid'];
+
+        $previous = self::find($this->vc_parent);
+        $this->vc_version = $previous->vc_version + 1;
+        $this->vc_branch = $previous->vc_branch;
+
+        return $this;
+    }
+
+    public function getIsNewModelAttribute(): bool
     {
         return is_null($this->vc_version);
     }
@@ -79,6 +93,37 @@ class Versioned extends Model
     public function modifyingUser(): BelongsTo
     {
         return $this->belongsTo(config('rs-version-control.user'), 'vc_modifier_uid', 'uid');
+    }
+
+    /**
+     * Cast vc active to boolean.
+     *
+     * @param  int  $value
+     * @return bool
+     */
+    public function getVcActiveAttribute($value)
+    {
+        return (bool) $value;
+    }
+
+    /**
+     * Is this version active
+     *
+     * @return bool
+     */
+    public function isActive(): bool
+    {
+        return $this->vc_active;
+    }
+
+    /**
+     * Was this version a delete action
+     *
+     * @return bool
+     */
+    public function isDeleted(): bool
+    {
+        return !$this->vc_active;
     }
 
     public function setBaseModel($name)
