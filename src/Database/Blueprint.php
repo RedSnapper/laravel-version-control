@@ -10,9 +10,7 @@ class Blueprint extends LaravelBlueprint
     {
         $this->uuid('uid');
         $this->uuid('model_uid');
-        $this->unsignedInteger('vc_version')->default(1);
         $this->unsignedInteger('vc_parent')->nullable();
-        $this->unsignedInteger('vc_branch')->default(1);
         $this->boolean('vc_active')->default(true);
         $this->uuid('vc_modifier_uid')->nullable();
         $this->primary(['uid'], "{$tableName}_vc_primary_key");

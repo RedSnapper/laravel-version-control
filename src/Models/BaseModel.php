@@ -71,31 +71,6 @@ class BaseModel extends Model
     }
 
     /**
-     * Gets the restore point based on key and version passed. Replicates it as a new version & sets the parent to
-     * restore point
-     *
-     * @param $version
-     * @return BaseModel
-     * @throws Exception
-     */
-    public function restore($version): BaseModel
-    {
-        // We do this to check the restore point is valid
-        try {
-            $restorePoint = $this->versions()
-                ->where('vc_version', $version)
-                ->firstOrFail();
-        } catch (Exception $e) {
-            throw new Exception('The version you have attempted to restore to does not exist');
-        }
-
-        $this->fill($restorePoint->toArray());
-        $this->save();
-
-        return $this;
-    }
-
-    /**
      * @return string
      */
     public function getVersionsTable(): string
@@ -130,6 +105,7 @@ class BaseModel extends Model
         );
     }
 
+
     /**
      * Fetches the version history for the key table model. For this to work, table and model naming convention must be
      * kept to (key table = users, version table = user_versions)
@@ -162,7 +138,7 @@ class BaseModel extends Model
     public function validateVersion(): bool
     {
         $latest = $this->versions()->latest()->first();
-        return (int)$this->vc_version === (int)$latest->vc_version;
+        return (int) $this->vc_version === (int) $latest->vc_version;
     }
 
     /**
@@ -191,9 +167,17 @@ class BaseModel extends Model
      * @param  string  $relationName
      * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
      */
-    protected function newBelongsToMany(Builder $query, Model $parent, $table, $foreignPivotKey, $relatedPivotKey,
-        $parentKey, $relatedKey, $relationName = null)
-    {
-        return new BelongsToMany($query, $parent, $table, $foreignPivotKey, $relatedPivotKey, $parentKey, $relatedKey, $relationName);
+    protected function newBelongsToMany(
+      Builder $query,
+      Model $parent,
+      $table,
+      $foreignPivotKey,
+      $relatedPivotKey,
+      $parentKey,
+      $relatedKey,
+      $relationName = null
+    ) {
+        return new BelongsToMany($query, $parent, $table, $foreignPivotKey, $relatedPivotKey, $parentKey, $relatedKey,
+          $relationName);
     }
 }

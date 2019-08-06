@@ -2,7 +2,7 @@
 
 namespace Redsnapper\LaravelVersionControl\Models;
 
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Redsnapper\LaravelVersionControl\Models\Traits\NoDeletesModel;
@@ -15,7 +15,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $uid
  * @property int $vc_version
  * @property int $vc_parent
- * @property int $vc_branch
  * @property int $vc_active
  * @property string $vc_modifier_uid
  * @property Carbon $created_at
@@ -25,7 +24,6 @@ class Versioned extends Model
 {
     protected $primaryKey = 'uid';
     public $incrementing = false;
-    protected $baseModel;
     protected $guarded = [];
 
     use NoDeletesModel,
@@ -61,7 +59,6 @@ class Versioned extends Model
         $this->model_uid = Str::uuid();
         $this->vc_active = true;
         $this->vc_parent = null;
-        $this->vc_branch = 1;
 
         return $this;
     }
@@ -75,14 +72,44 @@ class Versioned extends Model
     public function createFromExisting(array $attributes):self
     {
         $this->fill(Arr::except($attributes,['vc_version_uid']));
+
         $this->model_uid = $attributes['uid'];
+
+        // The previous version
         $this->vc_parent = $attributes['vc_version_uid'];
 
-        $previous = self::find($this->vc_parent);
-        $this->vc_version = $previous->vc_version + 1;
-        $this->vc_branch = $previous->vc_branch;
-
         return $this;
+    }
+
+    public function parent():HasOne
+    {
+        $instance = $this->newRelatedInstance(Versioned::class);
+        $instance->setTable($this->getTable());
+
+        $foreignKey = $this->getKeyName();
+
+        $localKey = 'vc_parent';
+
+        return $this->newHasOne($instance->newQuery(), $this, $instance->getTable().'.'.$foreignKey, $localKey);
+    }
+
+
+    /**
+     * Restore this version
+     *
+     * @return bool
+     */
+    public function restore(BaseModel $model)
+    {
+
+        $model->fill(array_merge(
+          Arr::except($this->attributes,['uid','model_uid','vc_parent','created_at','updated_at']),
+          [
+            'vc_version_uid'=> $this->attributes['uid']
+          ]
+        ));
+
+        return tap($model)->save();
     }
 
     public function getIsNewModelAttribute(): bool
@@ -126,8 +153,5 @@ class Versioned extends Model
         return !$this->vc_active;
     }
 
-    public function setBaseModel($name)
-    {
-        $this->baseModel = $name;
-    }
+
 }

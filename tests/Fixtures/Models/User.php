@@ -41,7 +41,7 @@ class User extends BaseModel implements
         MustVerifyEmail,
         BelongsToRoles;
 
-    protected $fillable = ['uid','vc_version','vc_active','role_uid','email','password'];
+    protected $fillable = ['uid','vc_version_uid','vc_active','role_uid','email','password'];
     protected $hidden = ['remember_token'];
 
     public function isCurrentUser(): bool

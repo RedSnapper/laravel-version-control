@@ -9,33 +9,6 @@ class VersionControlBaseModelTest extends Base
 {
     protected $model;
 
-    private function params($overrides = [])
-    {
-        return array_merge([
-            'vc_active' => 1,
-            'vc_modifier_uid' => null,
-            'role_uid' => ($this->createRole())->uid,
-            'email' => $this->faker->unique()->safeEmail,
-            'password' => 'secret',
-        ], $overrides);
-    }
-
-    public function setupModel(array $overrides = [], ?string $key = null)
-    {
-        $params = $this->params($overrides);
-
-        if(is_null($key)) {
-            $params = array_merge($params, ['uid' => $key]);
-            $this->model = (new User())->fill($params);
-        } else {
-            $this->model = User::find($key);
-        }
-
-        $this->model->save();
-
-        return $this->model;
-    }
-
     /** @test */
     public function can_create_new_record()
     {
@@ -86,13 +59,31 @@ class VersionControlBaseModelTest extends Base
         $this->assertFalse($user->exists);
 
         tap($user->currentVersion,function(Versioned $version){
-            $this->assertEquals(2,$version->vc_version);
             $this->assertTrue($version->isDeleted());
         });
 
         $this->assertNull(User::find($user->getKey()));
 
     }
+
+    /** @test */
+    public function can_be_restored_to_old_version()
+    {
+        $user = factory(User::class)->create(['email'=>'version1@tests.com']);
+        $user->email = "version2@tests.com";
+        $user->save();
+
+        $version = $user->versions()->oldest()->first();
+        $version->restore($user);
+
+        tap($user->fresh(),function(User $user) use($version){
+            $this->assertEquals("version1@tests.com", $user->email);
+            $this->assertCount(3,$user->versions);
+            $this->assertTrue($version->is($user->currentVersion->parent));
+        });
+
+    }
+
 
     ///** @test */
     //public function can_validate_its_data()
@@ -107,19 +98,5 @@ class VersionControlBaseModelTest extends Base
     //    $this->setupModel();
     //    $this->assertTrue($this->model->validateVersion());
     //}
-
-    /** @test */
-    //public function can_be_restored_to_old_version()
-    //{
-    //    $this->setupModel(["email" => "version1@tests.com"]);
-    //    $this->assertEquals(1, $this->model->vc_version);
-    //
-    //    $this->setupModel(["email" => "version2@tests.com"], $this->model->uid);
-    //    $this->assertEquals(2, $this->model->vc_version);
-    //
-    //    $this->model->restore(1);
-    //
-    //    $this->assertEquals("version1@tests.com", $this->model->email);
-    //    $this->assertEquals(3, $this->model->vc_version);
-    //}
+    
 }
