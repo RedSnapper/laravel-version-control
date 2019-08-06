@@ -153,5 +153,10 @@ class Versioned extends Model
         return !$this->vc_active;
     }
 
+    public function toModelArray()
+    {
+        return Arr::except($this->attributes,['uid','model_uid','vc_parent']);
+    }
+
 
 }

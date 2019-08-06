@@ -85,18 +85,22 @@ class VersionControlBaseModelTest extends Base
     }
 
 
-    ///** @test */
-    //public function can_validate_its_data()
-    //{
-    //    $this->setupModel();
-    //    $this->assertTrue($this->model->validateData());
-    //}
-    //
-    ///** @test */
-    //public function can_validate_its_own_version()
-    //{
-    //    $this->setupModel();
-    //    $this->assertTrue($this->model->validateVersion());
-    //}
-    
+    /** @test */
+    public function can_validate_its_data()
+    {
+        $user = factory(User::class)->create();
+        $this->assertTrue($user->validateData());
+
+        $user->email ="foo";
+
+        $this->assertFalse($user->validateData());
+    }
+
+    /** @test */
+    public function can_validate_its_own_version()
+    {
+        $user = factory(User::class)->create();
+        $this->assertTrue($user->validateVersion());
+    }
+
 }

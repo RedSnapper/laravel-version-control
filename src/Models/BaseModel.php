@@ -137,8 +137,7 @@ class BaseModel extends Model
      */
     public function validateVersion(): bool
     {
-        $latest = $this->versions()->latest()->first();
-        return (int) $this->vc_version === (int) $latest->vc_version;
+        return $this->versions()->latest()->first()->uid === (string) $this->vc_version_uid;
     }
 
     /**
@@ -149,9 +148,11 @@ class BaseModel extends Model
      */
     public function validateData(): bool
     {
-        $me = collect($this->toArray());
-        $difference = $me->diff($this->versions()->latest()->first()->toArray());
-        return (empty($difference->all())) ? true : false;
+        $me = collect(Arr::except($this->toArray(),['uid','vc_version_uid']));
+
+        $difference = $me->diffAssoc($this->versions()->latest()->first()->toModelArray());
+
+        return $difference->isEmpty();
     }
 
     /**
