@@ -17,15 +17,6 @@ trait NoDeletesModel
     }
 
     /**
-     * Throws ReadOnlyException on forceDelete
-     * @throws ReadOnlyException
-     */
-    public function forceDelete()
-    {
-        throw new ReadOnlyException(__FUNCTION__, get_called_class());
-    }
-
-    /**
      * Throws ReadOnlyException on truncate
      * @throws ReadOnlyException
      */

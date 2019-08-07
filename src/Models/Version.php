@@ -5,6 +5,7 @@ namespace Redsnapper\LaravelVersionControl\Models;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
+use Redsnapper\LaravelVersionControl\Exceptions\ReadOnlyException;
 use Redsnapper\LaravelVersionControl\Models\Traits\NoDeletesModel;
 use Redsnapper\LaravelVersionControl\Models\Traits\NoUpdatesModel;
 use Illuminate\Database\Eloquent\Model;
@@ -157,6 +158,16 @@ class Version extends Model
     public function toModelArray()
     {
         return Arr::except($this->attributes,['uid','model_uid','vc_parent']);
+    }
+
+    /**
+     * Perform the actual delete query on this model instance.
+     *
+     * @return mixed
+     */
+    protected function performDeleteOnModel()
+    {
+        throw new ReadOnlyException(__FUNCTION__, get_called_class());
     }
 
 

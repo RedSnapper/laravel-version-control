@@ -2,6 +2,7 @@
 
 namespace Redsnapper\LaravelVersionControl\Tests;
 
+use Redsnapper\LaravelVersionControl\Exceptions\ReadOnlyException;
 use Redsnapper\LaravelVersionControl\Models\Version;
 use Redsnapper\LaravelVersionControl\Tests\Fixtures\Models\User;
 
@@ -151,6 +152,48 @@ class VersionControlBaseModelTest extends Base
     {
         $user = factory(User::class)->create();
         $this->assertTrue($user->validateVersion());
+    }
+
+    /** @test */
+    public function cannot_delete_model_using_destroy()
+    {
+        $this->expectException(ReadOnlyException::class);
+        $user = factory(User::class)->create();
+        $user->destroy($user->uid);
+    }
+
+    /** @test */
+    public function cannot_delete_model_using_truncate()
+    {
+        $this->expectException(ReadOnlyException::class);
+        $user = factory(User::class)->create();
+        $user->truncate();
+    }
+
+    /** @test */
+    public function cannot_delete_version_using_delete()
+    {
+        $this->expectException(ReadOnlyException::class);
+        $user = factory(User::class)->create();
+        $user->currentVersion->delete();
+    }
+
+    /** @test */
+    public function cannot_delete_version_using_destroy()
+    {
+        $this->expectException(ReadOnlyException::class);
+        $user = factory(User::class)->create();
+        $version = $user->currentVersion;
+        $version->destroy($version->uid);
+    }
+
+    /** @test */
+    public function cannot_delete_version_using_truncate()
+    {
+        $this->expectException(ReadOnlyException::class);
+        $user = factory(User::class)->create();
+        $version = $user->currentVersion;
+        $version->truncate();
     }
 
 }
