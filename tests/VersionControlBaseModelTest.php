@@ -196,4 +196,20 @@ class VersionControlBaseModelTest extends Base
         $version->truncate();
     }
 
+    /** @test */
+    public function can_not_insert_on_a_model()
+    {
+        $this->expectException(ReadOnlyException::class);
+        $user = new User();
+        $user->insert(['email'=>'foo']);
+    }
+
+    /** @test */
+    public function can_not_touch_a_model()
+    {
+        $this->expectException(ReadOnlyException::class);
+        $user = new User();
+        $user->touch();
+    }
+
 }
