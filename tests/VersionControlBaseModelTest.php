@@ -120,6 +120,20 @@ class VersionControlBaseModelTest extends Base
 
     }
 
+    /** @test */
+    public function a_version_may_have_an_owner()
+    {
+        $userA = factory(User::class)->create();
+
+        $this->assertNull($userA->currentVersion->modifyingUser);
+
+        $this->actingAs($userA);
+
+        $userB = factory(User::class)->create();
+
+        $this->assertTrue($userA->is($userB->currentVersion->modifyingUser));
+    }
+
 
     /** @test */
     public function can_validate_its_data()

@@ -109,13 +109,13 @@ class Version extends Model
     }
 
     /**
-     * User related to this version
+     * User who modified this version
      *
      * @return BelongsTo
      */
     public function modifyingUser(): BelongsTo
     {
-        return $this->belongsTo(config('rs-version-control.user'), 'vc_modifier_uid', 'uid');
+        return $this->belongsTo(config('version-control.user'), 'vc_modifier_uid', 'uid');
     }
 
     /**
