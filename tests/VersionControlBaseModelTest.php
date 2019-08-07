@@ -67,6 +67,15 @@ class VersionControlBaseModelTest extends Base
     }
 
     /** @test */
+    public function can_retrieve_trashed_model()
+    {
+        $user = factory(User::class)->create();
+        $user->delete();
+
+        $this->assertCount(1,User::withTrashed()->get());
+    }
+
+    /** @test */
     public function can_be_restored_to_old_version()
     {
         $user = factory(User::class)->create(['email'=>'version1@tests.com']);

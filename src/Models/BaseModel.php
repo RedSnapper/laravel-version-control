@@ -5,6 +5,7 @@ namespace Redsnapper\LaravelVersionControl\Models;
 use Exception;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Pluralizer;
 use Redsnapper\LaravelVersionControl\Models\Traits\ActiveOnlyModel;
@@ -15,6 +16,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 use Redsnapper\LaravelVersionControl\Scopes\ActiveScope;
+use Redsnapper\LaravelVersionControl\Scopes\SoftDeletingScope;
 
 /**
  * Class BaseModel
@@ -41,8 +43,9 @@ class BaseModel extends Model
             return $model->createVersion();
         });
 
-        static::addGlobalScope(new ActiveScope());
+        static::addGlobalScope(new SoftDeletingScope);
     }
+
 
     /**
      * Create a new version
@@ -181,4 +184,6 @@ class BaseModel extends Model
         return new BelongsToMany($query, $parent, $table, $foreignPivotKey, $relatedPivotKey, $parentKey, $relatedKey,
           $relationName);
     }
+
+
 }
