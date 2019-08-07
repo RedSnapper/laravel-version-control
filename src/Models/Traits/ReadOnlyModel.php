@@ -28,15 +28,6 @@ trait ReadOnlyModel
     }
 
     /**
-     * Throws ReadOnlyException on restore
-     * @throws ReadOnlyException
-     */
-    public function restore()
-    {
-        throw new ReadOnlyException(__FUNCTION__, get_called_class());
-    }
-
-    /**
      * Throws ReadOnlyException on push
      * @throws ReadOnlyException
      */

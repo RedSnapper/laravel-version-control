@@ -69,10 +69,14 @@ class VersionControlBaseModelTest extends Base
     /** @test */
     public function can_retrieve_trashed_model()
     {
-        $user = factory(User::class)->create();
-        $user->delete();
+        $userA = factory(User::class)->create();
+        $userA->delete();
+        $userB = factory(User::class)->create();
+        $this->assertCount(2,User::withTrashed()->get());
+        $this->assertCount(1,User::onlyTrashed()->get());
 
-        $this->assertCount(1,User::withTrashed()->get());
+        $this->assertTrue($userA->is(User::onlyTrashed()->first()));
+        $this->assertCount(1,User::all());
     }
 
     /** @test */
@@ -91,8 +95,31 @@ class VersionControlBaseModelTest extends Base
             $this->assertTrue($version->is($user->currentVersion->parent));
         });
 
-    }
 
+        $user->email = "version4@redsnapper.net";
+        $user->save();
+
+        $user->restore($version);
+
+        tap($user->fresh(),function(User $user) use($version){
+            $this->assertEquals("version1@tests.com", $user->email);
+            $this->assertCount(5,$user->versions);
+            $this->assertTrue($version->is($user->currentVersion->parent));
+        });
+
+        $user->email = "version6@redsnapper.net";
+        $user->save();
+
+        $user->restore($version->getKey());
+
+        tap($user->fresh(),function(User $user) use($version){
+            $this->assertEquals("version1@tests.com", $user->email);
+            $this->assertCount(7,$user->versions);
+            $this->assertTrue($version->is($user->currentVersion->parent));
+        });
+
+    }
+    
 
     /** @test */
     public function can_validate_its_data()

@@ -10,7 +10,7 @@ class SoftDeletingScope implements Scope
 {
     public function apply(Builder $builder, Model $model)
     {
-        $builder->where("vc_active");
+        $builder->where("vc_active",1);
     }
 
     /**
@@ -21,11 +21,15 @@ class SoftDeletingScope implements Scope
      */
     public function extend(Builder $builder)
     {
-        $builder->macro('withTrashed', function (Builder $builder, $withTrashed = true) {
-            //if (! $withTrashed) {
-            //    return $builder->withoutTrashed();
-            //}
+        $builder->macro('withTrashed', function (Builder $builder) {
             return $builder->withoutGlobalScope($this);
+        });
+
+        $builder->macro('onlyTrashed', function (Builder $builder) {
+
+            $builder->withoutGlobalScope($this)->where('vc_active',0);
+
+            return $builder;
         });
     }
 }

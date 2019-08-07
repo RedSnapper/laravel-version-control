@@ -39,7 +39,7 @@ class Versioned extends Model
          */
         static::creating(function (Versioned $model) {
 
-            $uid = Str::uuid();
+            $uid = (string) Str::uuid();
             $model->uid = $uid;
             if (auth()->check()) {
                 $model->vc_modifier_uid = auth()->user()->uid;
@@ -56,7 +56,7 @@ class Versioned extends Model
     public function createFromNew(array $attributes):self
     {
         $this->fill($attributes);
-        $this->model_uid = Str::uuid();
+        $this->model_uid = (string) Str::uuid();
         $this->vc_active = true;
         $this->vc_parent = null;
 
@@ -105,6 +105,7 @@ class Versioned extends Model
         $model->fill(array_merge(
           Arr::except($this->attributes,['uid','model_uid','vc_parent','created_at','updated_at']),
           [
+            // This sets the parent
             'vc_version_uid'=> $this->attributes['uid']
           ]
         ));

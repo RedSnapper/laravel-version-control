@@ -46,7 +46,6 @@ class BaseModel extends Model
         static::addGlobalScope(new SoftDeletingScope);
     }
 
-
     /**
      * Create a new version
      *
@@ -108,7 +107,6 @@ class BaseModel extends Model
         );
     }
 
-
     /**
      * Fetches the version history for the key table model. For this to work, table and model naming convention must be
      * kept to (key table = users, version table = user_versions)
@@ -125,6 +123,11 @@ class BaseModel extends Model
         return $this->newHasOne($instance->newQuery(), $this, $instance->getTable().'.'.$foreignKey, $localKey);
     }
 
+    /**
+     * Perform the actual delete query on this model instance.
+     *
+     * @return mixed
+     */
     protected function performDeleteOnModel()
     {
         $this->vc_active = false;
@@ -140,7 +143,7 @@ class BaseModel extends Model
      */
     public function validateVersion(): bool
     {
-        return $this->versions()->latest()->first()->uid === (string) $this->vc_version_uid;
+        return $this->versions()->latest()->first()->uid === $this->vc_version_uid;
     }
 
     /**
@@ -151,11 +154,21 @@ class BaseModel extends Model
      */
     public function validateData(): bool
     {
-        $me = collect(Arr::except($this->toArray(),['uid','vc_version_uid']));
+        $me = collect(Arr::except($this->toArray(), ['uid', 'vc_version_uid']));
 
         $difference = $me->diffAssoc($this->versions()->latest()->first()->toModelArray());
 
         return $difference->isEmpty();
+    }
+
+    public function restore($version)
+    {
+        if(is_string($version)){
+            $instance = $this->getVersionInstance();
+            $version = $instance->findOrFail($version);
+        }
+
+        return $version->restore($this);
     }
 
     /**
@@ -184,6 +197,5 @@ class BaseModel extends Model
         return new BelongsToMany($query, $parent, $table, $foreignPivotKey, $relatedPivotKey, $parentKey, $relatedKey,
           $relationName);
     }
-
 
 }
