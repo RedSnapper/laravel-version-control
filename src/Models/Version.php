@@ -7,20 +7,10 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Redsnapper\LaravelVersionControl\Models\Traits\NoDeletesModel;
 use Redsnapper\LaravelVersionControl\Models\Traits\NoUpdatesModel;
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-/**
- * @property string $uid
- * @property int $vc_version
- * @property int $vc_parent
- * @property int $vc_active
- * @property string $vc_modifier_uid
- * @property Carbon $created_at
- * @property Carbon $updated_at
- */
-class Versioned extends Model
+class Version extends Model
 {
     protected $primaryKey = 'uid';
     public $incrementing = false;
@@ -37,7 +27,7 @@ class Versioned extends Model
          * On creating, we verify whether our new entry has a previous version or not, increment the version and see if
          * we need to increment the branch too.
          */
-        static::creating(function (Versioned $model) {
+        static::creating(function (Version $model) {
 
             $uid = (string) Str::uuid();
             $model->uid = $uid;
@@ -51,7 +41,7 @@ class Versioned extends Model
      * Create version from a new model
      *
      * @param  array  $attributes
-     * @return Versioned
+     * @return Version
      */
     public function createFromNew(array $attributes):self
     {
@@ -67,7 +57,7 @@ class Versioned extends Model
      * Create version from existing model
      *
      * @param  array  $attributes
-     * @return Versioned
+     * @return Version
      */
     public function createFromExisting(array $attributes):self
     {
@@ -81,9 +71,14 @@ class Versioned extends Model
         return $this;
     }
 
+    /**
+     * Parent of this version
+     *
+     * @return HasOne
+     */
     public function parent():HasOne
     {
-        $instance = $this->newRelatedInstance(Versioned::class);
+        $instance = $this->newRelatedInstance(Version::class);
         $instance->setTable($this->getTable());
 
         $foreignKey = $this->getKeyName();
@@ -113,11 +108,11 @@ class Versioned extends Model
         return tap($model)->save();
     }
 
-    public function getIsNewModelAttribute(): bool
-    {
-        return is_null($this->vc_version);
-    }
-
+    /**
+     * User related to this version
+     *
+     * @return BelongsTo
+     */
     public function modifyingUser(): BelongsTo
     {
         return $this->belongsTo(config('rs-version-control.user'), 'vc_modifier_uid', 'uid');
@@ -154,6 +149,11 @@ class Versioned extends Model
         return !$this->vc_active;
     }
 
+    /**
+     * Return only model data
+     *
+     * @return array
+     */
     public function toModelArray()
     {
         return Arr::except($this->attributes,['uid','model_uid','vc_parent']);

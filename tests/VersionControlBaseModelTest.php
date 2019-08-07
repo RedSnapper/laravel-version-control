@@ -2,7 +2,7 @@
 
 namespace Redsnapper\LaravelVersionControl\Tests;
 
-use Redsnapper\LaravelVersionControl\Models\Versioned;
+use Redsnapper\LaravelVersionControl\Models\Version;
 use Redsnapper\LaravelVersionControl\Tests\Fixtures\Models\User;
 
 class VersionControlBaseModelTest extends Base
@@ -40,7 +40,7 @@ class VersionControlBaseModelTest extends Base
 
         $this->assertCount(2,$user->versions);
 
-        tap($user->currentVersion,function(Versioned $version) use($user){
+        tap($user->currentVersion,function(Version $version) use($user){
             $this->assertEquals('jane@example.com',$version->email);
             $this->assertTrue($version->isActive());
             $this->assertEquals($user->password,$version->password);
@@ -58,7 +58,7 @@ class VersionControlBaseModelTest extends Base
         $this->assertCount(2,$user->versions);
         $this->assertFalse($user->exists);
 
-        tap($user->currentVersion,function(Versioned $version){
+        tap($user->currentVersion,function(Version $version){
             $this->assertTrue($version->isDeleted());
         });
 
@@ -119,7 +119,7 @@ class VersionControlBaseModelTest extends Base
         });
 
     }
-    
+
 
     /** @test */
     public function can_validate_its_data()

@@ -2,31 +2,18 @@
 
 namespace Redsnapper\LaravelVersionControl\Models;
 
-use Exception;
+
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\SoftDeletes;
+
 use Illuminate\Support\Arr;
 use Illuminate\Support\Pluralizer;
-use Redsnapper\LaravelVersionControl\Models\Traits\ActiveOnlyModel;
 use Redsnapper\LaravelVersionControl\Models\Traits\NoDeletesModel;
 use Redsnapper\LaravelVersionControl\Models\Traits\ReadOnlyModel;
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Str;
-use Redsnapper\LaravelVersionControl\Scopes\ActiveScope;
 use Redsnapper\LaravelVersionControl\Scopes\SoftDeletingScope;
 
-/**
- * Class BaseModel
- *
- * @property string $uid
- * @property int $vc_version
- * @property int $vc_active
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
- */
 class BaseModel extends Model
 {
     protected $primaryKey = 'uid';
@@ -73,6 +60,8 @@ class BaseModel extends Model
     }
 
     /**
+     * Name of the versions table
+     *
      * @return string
      */
     public function getVersionsTable(): string
@@ -81,17 +70,18 @@ class BaseModel extends Model
     }
 
     /**
-     * @return Versioned
+     * Get version model with table set
+     *
+     * @return Version
      */
-    private function getVersionInstance(): Versioned
+    private function getVersionInstance(): Version
     {
-        $versionClass = new Versioned();
+        $versionClass = new Version();
         return $versionClass->setTable($this->getVersionsTable());
     }
 
     /**
-     * Fetches the version history for the key table model. For this to work, table and model naming convention must be
-     * kept to (key table = users, version table = user_versions)
+     * Get all versions
      *
      * @return HasMany
      */
@@ -108,8 +98,7 @@ class BaseModel extends Model
     }
 
     /**
-     * Fetches the version history for the key table model. For this to work, table and model naming convention must be
-     * kept to (key table = users, version table = user_versions)
+     * Get the current version
      *
      * @return HasOne
      */
@@ -161,6 +150,12 @@ class BaseModel extends Model
         return $difference->isEmpty();
     }
 
+    /**
+     * Restore to this version
+     *
+     * @param string|Version $version
+     * @return BaseModel
+     */
     public function restore($version)
     {
         if(is_string($version)){
