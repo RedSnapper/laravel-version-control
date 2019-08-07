@@ -11,28 +11,21 @@ class BelongsToTest extends Base
     /** @test */
     public function a_vc_model_can_belong_to_another()
     {
-        $role = $this->createRole();
-        $user = $this->createUser(['role_uid' => $role->uid]);
+        $role = factory(Role::class)->create();
+        $user = factory(User::class)->create(['role_uid' => $role->uid]);
 
-        $this->assertEquals($user->role_uid, $role->uid);
-        $this->assertInstanceOf(BelongsTo::class, $user->role());
-        $this->assertInstanceOf(Role::class, $user->role);
+        $this->assertTrue($user->role->is($role));
+        $this->assertTrue($user->is($role->users->first()));
+
     }
 
     /** @test */
     public function only_an_active_relation_can_be_returned()
     {
-        $role = $this->createRole();
-        $user = $this->createUser(['role_uid' => $role->uid]);
-
-        $this->assertEquals($user->role_uid, $role->uid);
-        $this->assertInstanceOf(BelongsTo::class, $user->role());
-        $this->assertInstanceOf(Role::class, $user->role);
-
+        $role = factory(Role::class)->create();
+        $user = factory(User::class)->create(['role_uid' => $role->uid]);
         $role->delete();
 
-        $user = User::find($user->uid);
-
-        $this->assertNotInstanceOf(Role::class, $user->role);
+        $this->assertNull($user->role);
     }
 }

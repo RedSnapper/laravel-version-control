@@ -66,21 +66,4 @@ class User extends BaseModel implements
     {
         return $this->belongsTo(Role::class);
     }
-
-    /**
-     * @param  string  $permission
-     * @return bool
-     * @throws Exception
-     */
-    public function hasPermissionTo(string $permission): bool
-    {
-        $permission = Permission::findByName($permission);
-
-        if ($permission) {
-            return $permission->role()->pluck('role_uid')
-                ->intersect($this->role_uid)->isNotEmpty();
-        }
-
-        return false;
-    }
 }
