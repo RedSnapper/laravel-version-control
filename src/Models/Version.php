@@ -13,9 +13,33 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Version extends Model
 {
+    /**
+     * The primary key for the model.
+     *
+     * @var string
+     */
     protected $primaryKey = 'uid';
+
+    /**
+     * Indicates if the IDs are auto-incrementing.
+     *
+     * @var bool
+     */
     public $incrementing = false;
-    protected $guarded = [];
+
+    /**
+     * The attributes that aren't mass assignable.
+     *
+     * @var array
+     */
+    protected $guarded = ['created_at','updated_at'];
+
+    /**
+     * Indicates if the model should be timestamped.
+     *
+     * @var bool
+     */
+    public $timestamps = false;
 
     use NoDeletesModel,
       NoUpdatesModel;
@@ -31,6 +55,7 @@ class Version extends Model
         static::creating(function (Version $model) {
 
             $uid = (string) Str::uuid();
+            $model->created_at = $model->freshTimestamp();
             $model->uid = $uid;
             if (auth()->check()) {
                 $model->vc_modifier_uid = auth()->user()->uid;

@@ -15,7 +15,16 @@ class CreatePermissionRoleTable extends Migration
      */
     public function up()
     {
-        $this->makeVcPivotTables("permission_role", "permission_uid", "role_uid");
+        $this->makeVcTables("permission_role",function(Blueprint $table){
+            $table->uuid('permission_uid');
+            $table->uuid('role_uid');
+            $table->string('region')->nullable();
+            $table->unique(['permission_uid','role_uid']);
+        },function(Blueprint $table){
+            $table->uuid('permission_uid');
+            $table->uuid('role_uid');
+            $table->string('region')->nullable();
+        });
     }
 
     /**
@@ -25,6 +34,6 @@ class CreatePermissionRoleTable extends Migration
      */
     public function down()
     {
-        $this->dropVcPivotTables("permission_role");
+        $this->dropVcTables("permission_role");
     }
 }

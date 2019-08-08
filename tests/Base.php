@@ -16,29 +16,4 @@ class Base extends TestCase
 {
     use RefreshDatabase, WithFaker;
 
-
-    protected function createPermission(array $overrides = []): Permission
-    {
-        $permission = (new Permission())->fill(array_merge([
-            'vc_active' => 1,
-            'vc_modifier_uid' => null,
-            'name' => $this->faker->jobTitle,
-        ], $overrides));
-
-        $permission->save();
-        return $permission;
-    }
-
-    protected function createJob(array $overrides = []): Job
-    {
-        $job = (new Job())->fill(array_merge([
-            'vc_active' => 1,
-            'vc_modifier_uid' => null,
-            'user_uid' => ($this->createUser())->uid,
-            'title' => $this->faker->word,
-        ], $overrides));
-
-        $job->save();
-        return $job;
-    }
 }

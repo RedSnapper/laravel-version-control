@@ -2,9 +2,9 @@
 
 namespace Redsnapper\LaravelVersionControl\Models;
 
-
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Pluralizer;
 use Redsnapper\LaravelVersionControl\Models\Traits\NoDeletesModel;
@@ -111,6 +111,7 @@ class BaseModel extends Model
         return $this->newHasOne($instance->newQuery(), $this, $instance->getTable().'.'.$foreignKey, $localKey);
     }
 
+
     /**
      * Perform the actual delete query on this model instance.
      *
@@ -142,7 +143,7 @@ class BaseModel extends Model
      */
     public function validateData(): bool
     {
-        $me = collect(Arr::except($this->toArray(), ['uid', 'vc_version_uid']));
+        $me = collect(Arr::except($this->toArray(), ['uid', 'vc_version_uid','updated_at']));
 
         $difference = $me->diffAssoc($this->versions()->latest()->first()->toModelArray());
 
@@ -152,12 +153,12 @@ class BaseModel extends Model
     /**
      * Restore to this version
      *
-     * @param string|Version $version
+     * @param  string|Version  $version
      * @return BaseModel
      */
     public function restore($version)
     {
-        if(is_string($version)){
+        if (is_string($version)) {
             $instance = $this->getVersionInstance();
             $version = $instance->findOrFail($version);
         }
@@ -188,8 +189,8 @@ class BaseModel extends Model
       $relatedKey,
       $relationName = null
     ) {
-        return new BelongsToMany($query, $parent, $table, $foreignPivotKey, $relatedPivotKey, $parentKey, $relatedKey,
-          $relationName);
+        return (new BelongsToMany($query, $parent, $table, $foreignPivotKey, $relatedPivotKey, $parentKey, $relatedKey,
+          $relationName))->wherePivot('vc_active',1);
     }
 
 }

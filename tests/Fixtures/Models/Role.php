@@ -11,11 +11,7 @@ class Role extends BaseModel
 
     public function permissions()
     {
-        return $this->belongsToMany(Permission::class, 'permission_roles',
-            'role_uid',
-            'permission_uid','uid', 'uid')
-            ->withPivot(['uid','vc_version','vc_active'])
-            ->using(PermissionRole::class);
+        return $this->belongsToMany(Permission::class)->withPivot('region');
     }
 
     public function users()

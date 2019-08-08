@@ -12,7 +12,7 @@ class CreateUsersTable extends Migration
      */
     public function up()
     {
-        $this->makeVcTables("user",function(Blueprint $table){
+        $this->makeVcTables("users",function(Blueprint $table){
             $table->uuid('role_uid')->nullable();
             $table->string('email')->unique();
             $table->string('password');

@@ -30,12 +30,11 @@ abstract class Migration extends LaravelMigration
      * @param  string  $modelName
      * @return array
      */
-    public function makeVcTables(string $modelName,Closure $modelClosure = null, Closure $versionClosure = null)
+    public function makeVcTables(string $tableName,Closure $modelClosure = null, Closure $versionClosure = null)
     {
-        $plural = Pluralizer::plural($modelName, 2);
 
-        $this->schema->create($plural, function (Blueprint $table) use ($plural,$modelClosure) {
-            $table->vcKeyTableColumns($plural);
+        $this->schema->create($tableName, function (Blueprint $table) use ($tableName,$modelClosure) {
+            $table->vcKeyTableColumns($tableName);
             $table->timestamps();
             if(is_callable($modelClosure)){
                 $modelClosure($table);
@@ -44,45 +43,23 @@ abstract class Migration extends LaravelMigration
 
         $closure = $versionClosure ?? $modelClosure;
 
-        $this->schema->create("{$modelName}_versions", function (Blueprint $table) use ($modelName,$closure) {
-            $table->vcVersionTableColumns("{$modelName}_versions");
-            $table->timestamps();
+        $versionsTableName = Pluralizer::singular($tableName) . "_versions";
+
+        $this->schema->create($versionsTableName, function (Blueprint $table) use ($versionsTableName,$closure) {
+            $table->vcVersionTableColumns($versionsTableName);
+            $table->timestamp('created_at')->nullable();
             if(is_callable($closure)){
                 $closure($table);
             }
         });
 
-        return ["{$modelName}_versions", $plural];
+        return ["{$tableName}_versions", $tableName];
     }
 
-    public function makeVcPivotTables(string $modelName, string $key1, string $key2)
+
+    public function dropVcTables(string $tableName)
     {
-        $plural = Pluralizer::plural($modelName, 2);
-
-        $this->schema->create("{$modelName}_versions", function (Blueprint $table) use ($key1, $key2) {
-            $table->vcVersionPivotTableColumns($key1, $key2, $table->getTable());
-            $table->timestamps();
-        });
-
-        $this->schema->create($plural, function (Blueprint $table) use ($key1, $key2) {
-            $table->vcKeyPivotTableColumns($key1, $key2, $table->getTable());
-            $table->timestamps();
-        });
-
-        return ["{$modelName}_versions", $modelName];
-    }
-
-    public function dropVcTables(string $modelName)
-    {
-        $plural = Pluralizer::plural($modelName, 2);
-        $this->schema->dropIfExists($plural);
-        $this->schema->dropIfExists("{$modelName}_versions");
-    }
-
-    public function dropVcPivotTables(string $modelName)
-    {
-        $plural = Pluralizer::plural($modelName, 2);
-        $this->schema->dropIfExists("{$plural}");
-        $this->schema->dropIfExists("{$modelName}_versions");
+        $this->schema->dropIfExists($tableName);
+        $this->schema->dropIfExists("{$tableName}_versions");
     }
 }

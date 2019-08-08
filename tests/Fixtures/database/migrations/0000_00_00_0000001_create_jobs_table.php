@@ -12,7 +12,7 @@ class CreateJobsTable extends Migration
      */
     public function up()
     {
-        $this->makeVcTables("job",function(Blueprint $table){
+        $this->makeVcTables("jobs",function(Blueprint $table){
             $table->uuid('user_uid');
             $table->string('title');
         });

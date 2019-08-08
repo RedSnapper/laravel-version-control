@@ -14,7 +14,7 @@ class CreatePermissionsTable extends Migration
      */
     public function up()
     {
-        $this->makeVcTables("permission",function(Blueprint $table){
+        $this->makeVcTables("permissions",function(Blueprint $table){
             $table->string('name')->unique();
         },function(Blueprint $table){
             $table->string('name');

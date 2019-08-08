@@ -38,8 +38,7 @@ class User extends BaseModel implements
         Authenticatable,
         Authorizable,
         CanResetPassword,
-        MustVerifyEmail,
-        BelongsToRoles;
+        MustVerifyEmail;
 
     protected $fillable = ['role_uid','email','password'];
     protected $hidden = ['remember_token'];

@@ -2,6 +2,7 @@
 
 namespace Redsnapper\LaravelVersionControl\Tests;
 
+use Illuminate\Support\Carbon;
 use Redsnapper\LaravelVersionControl\Exceptions\ReadOnlyException;
 use Redsnapper\LaravelVersionControl\Models\Version;
 use Redsnapper\LaravelVersionControl\Tests\Fixtures\Models\User;
@@ -16,6 +17,7 @@ class VersionControlBaseModelTest extends Base
         $user = factory(User::class)->create([
           'email' => 'john@example.com',
         ]);
+
 
         $this->assertEquals('john@example.com',$user->email);
         $this->assertTrue($user->vc_active);
@@ -119,6 +121,27 @@ class VersionControlBaseModelTest extends Base
             $this->assertTrue($version->is($user->currentVersion->parent));
         });
 
+    }
+
+    /** @test */
+    public function dates_on_restore_are_correct()
+    {
+        $oldDate = Carbon::create(2019, 1, 31);
+        Carbon::setTestNow($oldDate);
+
+        $user = factory(User::class)->create(['email'=>'version1@tests.com']);
+        $user->email = "version2@tests.com";
+        $user->save();
+
+        $version = $user->versions()->oldest()->first();
+
+        $newDate = Carbon::create(2020, 1, 31);
+        Carbon::setTestNow($newDate);
+        $version->restore($user);
+
+        $this->assertEquals($newDate,$user->currentVersion->created_at);
+        $this->assertEquals($oldDate,$user->created_at);
+        $this->assertEquals($newDate,$user->updated_at);
     }
 
     /** @test */

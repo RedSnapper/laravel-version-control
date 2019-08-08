@@ -15,7 +15,7 @@ class CreateRolesTable extends Migration
      */
     public function up()
     {
-        $this->makeVcTables("role",function(Blueprint $table){
+        $this->makeVcTables("roles",function(Blueprint $table){
             $table->string('name');
         });
 
