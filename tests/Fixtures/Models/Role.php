@@ -7,7 +7,7 @@ use Redsnapper\LaravelVersionControl\Models\BaseModel;
 class Role extends BaseModel
 {
 
-    protected $fillable = ['uid','vc_version','vc_active','category_uid','name'];
+    protected $fillable = ['category_uid','name'];
 
     public function permissions()
     {

@@ -16,19 +16,6 @@ class Base extends TestCase
 {
     use RefreshDatabase, WithFaker;
 
-    protected function createUser(array $overrides = []): User
-    {
-        $user = (new User())->fill(array_merge([
-            'vc_active' => 1,
-            'vc_modifier_uid' => null,
-            'role_uid' => ($this->createRole())->uid,
-            'email' => $this->faker->unique()->safeEmail,
-            'password' => 'secret',
-        ], $overrides));
-
-        $user->save();
-        return $user;
-    }
 
     protected function createPermission(array $overrides = []): Permission
     {
@@ -42,18 +29,6 @@ class Base extends TestCase
         return $permission;
     }
 
-    protected function createRole(array $overrides = []): Role
-    {
-        $role = (new Role())->fill(array_merge([
-            'vc_active' => 1,
-            'vc_modifier_uid' => null,
-            'name' => $this->faker->jobTitle,
-        ], $overrides));
-
-        $role->save();
-        return $role;
-    }
-
     protected function createJob(array $overrides = []): Job
     {
         $job = (new Job())->fill(array_merge([
@@ -65,19 +40,5 @@ class Base extends TestCase
 
         $job->save();
         return $job;
-    }
-
-    protected function createPost(array $overrides = []): Post
-    {
-        $post = (new Post())->fill(array_merge([
-            'vc_active' => 1,
-            'vc_modifier_uid' => null,
-            'user_uid' => ($this->createUser())->uid,
-            'title' => $this->faker->sentence,
-            'content' => $this->faker->paragraph,
-        ], $overrides));
-
-        $post->save();
-        return $post;
     }
 }

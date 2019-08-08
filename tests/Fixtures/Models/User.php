@@ -49,11 +49,6 @@ class User extends BaseModel implements
         return $this->uid === auth()->user()->uid;
     }
 
-    public function posts()
-    {
-        return $this->hasMany(Post::class);
-    }
-
     public function job()
     {
         return $this->hasOne(Job::class);

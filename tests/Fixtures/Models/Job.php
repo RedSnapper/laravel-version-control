@@ -13,7 +13,7 @@ use Redsnapper\LaravelVersionControl\Models\BaseModel;
  */
 class Job extends BaseModel
 {
-    protected $fillable = ['uid','vc_version','vc_active','user_uid','title'];
+    protected $fillable = ['user_uid','title'];
 
     public function user()
     {
