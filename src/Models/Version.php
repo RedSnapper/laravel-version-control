@@ -62,7 +62,7 @@ class Version extends Model
      */
     public function createFromExisting(array $attributes):self
     {
-        $this->fill(Arr::except($attributes,['vc_version_uid']));
+        $this->fill(Arr::except($attributes,['vc_version_uid','uid']));
 
         $this->model_uid = $attributes['uid'];
 
@@ -98,13 +98,13 @@ class Version extends Model
     public function restore(BaseModel $model)
     {
 
-        $model->fill(array_merge(
-          Arr::except($this->attributes,['uid','model_uid','vc_parent','created_at','updated_at']),
-          [
-            // This sets the parent
-            'vc_version_uid'=> $this->attributes['uid']
-          ]
-        ));
+        $model->fill(
+          Arr::except($this->attributes,['uid','model_uid','vc_parent','created_at','updated_at'])
+        );
+
+        $model->forceFill([
+          'vc_version_uid'=> $this->attributes['uid']
+        ]);
 
         return tap($model)->save();
     }
