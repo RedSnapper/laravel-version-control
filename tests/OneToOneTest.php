@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Redsnapper\LaravelVersionControl\Tests\Fixtures\Models\Job;
 use Redsnapper\LaravelVersionControl\Tests\Fixtures\Models\User;
 
-class OneToOneTest extends Base
+class OneToOneTest extends TestCase
 {
     /** @test */
     public function a_vc_model_can_have_a_has_one_relation()

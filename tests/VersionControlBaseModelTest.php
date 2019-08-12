@@ -7,7 +7,7 @@ use Redsnapper\LaravelVersionControl\Exceptions\ReadOnlyException;
 use Redsnapper\LaravelVersionControl\Models\Version;
 use Redsnapper\LaravelVersionControl\Tests\Fixtures\Models\User;
 
-class VersionControlBaseModelTest extends Base
+class VersionControlBaseModelTest extends TestCase
 {
     protected $model;
 
@@ -228,11 +228,21 @@ class VersionControlBaseModelTest extends Base
     }
 
     /** @test */
-    public function can_not_touch_a_model()
+    public function can_touch_a_model()
     {
-        $this->expectException(ReadOnlyException::class);
-        $user = new User();
+        $oldDate = Carbon::create(2018, 1, 31);
+        Carbon::setTestNow($oldDate);
+        $user = factory(User::class)->create();
+
+        $newDate = Carbon::create(2019, 1, 31);
+        Carbon::setTestNow($newDate);
         $user->touch();
+
+        $this->assertEquals($newDate,$user->updated_at);
+        $this->assertEquals($oldDate,$user->created_at);
+        $this->assertCount(2,$user->versions);
+        $this->assertEquals($newDate,$user->currentVersion->created_at);
+
     }
 
 }

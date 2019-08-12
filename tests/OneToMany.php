@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Redsnapper\LaravelVersionControl\Tests\Fixtures\Models\Role;
 use Redsnapper\LaravelVersionControl\Tests\Fixtures\Models\User;
 
-class OneToMany extends Base
+class OneToMany extends TestCase
 {
     /** @test */
     public function a_vc_model_can_belong_to_another()

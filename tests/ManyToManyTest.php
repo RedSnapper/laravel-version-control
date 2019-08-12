@@ -8,9 +8,8 @@ use Redsnapper\LaravelVersionControl\Tests\Fixtures\Models\Permission;
 use Redsnapper\LaravelVersionControl\Tests\Fixtures\Models\PermissionRole;
 use Redsnapper\LaravelVersionControl\Tests\Fixtures\Models\Role;
 
-class ManyToManyTest extends Base
+class ManyToManyTest extends TestCase
 {
-    private $assertEquals;
 
     /** @test */
     public function can_attach_a_pivot_relation_using_a_model()
@@ -365,5 +364,6 @@ class ManyToManyTest extends Base
         $role->permissions()->updateOrCreate([$permission->getTable() . '.uid' => 'asd'], ['name' => 'dives']);
         $this->assertNotNull($role->permissions()->whereName('dives')->first());
     }
+
 
 }

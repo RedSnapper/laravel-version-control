@@ -67,6 +67,10 @@ class BelongsToMany extends \Illuminate\Database\Eloquent\Relations\BelongsToMan
             }
         }
 
+        if ($touch) {
+            $this->touchIfTouching();
+        }
+
     }
 
     /**
@@ -87,6 +91,10 @@ class BelongsToMany extends \Illuminate\Database\Eloquent\Relations\BelongsToMan
 
         foreach ($records as $record) {
             $results += $record->delete();
+        }
+
+        if ($touch) {
+            $this->touchIfTouching();
         }
 
         return $results;
@@ -220,6 +228,10 @@ class BelongsToMany extends \Illuminate\Database\Eloquent\Relations\BelongsToMan
         $updated = $model->isDirty();
 
         $model->save();
+
+        if ($touch) {
+            $this->touchIfTouching();
+        }
 
         return (int)$updated;
     }
