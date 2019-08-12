@@ -16,6 +16,14 @@ use Redsnapper\LaravelVersionControl\Scopes\SoftDeletingScope;
 class BaseModel extends Model
 {
     protected $primaryKey = 'uid';
+
+    /**
+     * The "type" of the primary key ID.
+     *
+     * @var string
+     */
+    protected $keyType = 'string';
+
     public $incrementing = false;
 
     use ReadOnlyModel,

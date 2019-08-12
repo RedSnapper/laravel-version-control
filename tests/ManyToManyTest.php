@@ -121,6 +121,24 @@ class ManyToManyTest extends Base
     }
 
     /** @test */
+    public function calling_detach_without_arguments_detaches_all()
+    {
+        $role = factory(Role::class)->create();
+        $permissionA = factory(Permission::class)->create();
+        $permissionB = factory(Permission::class)->create();
+
+        $role->permissions()->attach($permissionA);
+        $role->permissions()->attach($permissionB);
+        $this->assertCount(2,$role->permissions);
+
+        $role->permissions()->detach();
+
+        $this->assertCount(0,$role->refresh()->permissions);
+
+
+    }
+
+    /** @test */
     public function can_reattach_a_deleted_relation()
     {
         $role = factory(Role::class)->create();
@@ -139,6 +157,79 @@ class ManyToManyTest extends Base
     }
 
     // TODO Dates and touch
+
+
+    /** @test */
+    public function can_sync_pivot_relations()
+    {
+        $role = factory(Role::class)->create();
+        $permissionA = factory(Permission::class)->create();
+        $permissionB = factory(Permission::class)->create();
+
+        // Add permission A and B
+        $results = $role->permissions()->sync([$permissionA->getKey(),$permissionB->getKey()]);
+
+        $this->assertCount(2,$results['attached']);
+        $this->assertContains($permissionA->getKey(),$results['attached']);
+        $this->assertContains($permissionB->getKey(),$results['attached']);
+        $this->assertCount(2,$role->permissions);
+
+        // Remove permission B
+        $results = $role->permissions()->sync($permissionA);
+
+        $this->assertContains($permissionB->getKey(),$results['detached']);
+        $this->assertCount(1,$role->fresh()->permissions);
+
+        // Update permission A
+        $results = $role->permissions()->sync([$permissionA->getKey() =>['region'=>'foo']]);
+
+        $this->assertCount(0,$results['detached']);
+        $this->assertContains($permissionA->getKey(),$results['updated']);
+
+        $this->assertCount(1,$role->refresh()->permissions);
+        $this->assertEquals('foo',$role->permissions->first()->pivot->region);
+        $this->assertCount(2,$role->permissions->first()->pivot->versions);
+
+    }
+
+    /** @test */
+    public function a_reattached_pivot_model_returns_as_attached()
+    {
+        $role = factory(Role::class)->create();
+        $permission = factory(Permission::class)->create();
+
+        $role->permissions()->sync($permission);
+        $role->permissions()->detach($permission);
+        $results = $role->permissions()->sync([$permission->getKey()=>['region'=>'foo']]);
+        $this->assertCount(1,$results['attached']);
+        $this->assertEquals('foo',$role->permissions->first()->pivot->region);
+
+    }
+
+    /** @test */
+    public function a_sync_where_nothing_changes_results_in_no_change()
+    {
+        $role = factory(Role::class)->create();
+        $permission = factory(Permission::class)->create();
+
+        $role->permissions()->sync($permission);
+        $results = $role->permissions()->sync($permission);
+
+        $this->assertCount(0,$results['attached']);
+        $this->assertCount(0,$results['updated']);
+        $this->assertCount(1,$role->permissions->first()->pivot->versions);
+    }
+
+    
+
+    //TODO toggle
+
+    //TODO App\User::find(1)->roles()->save($role, ['expires' => $expires]);
+    // Saving Additional Data On A Pivot Table
+
+    // TODO $user->roles()->updateExistingPivot($roleId, $attributes);
+    // Updating A Record On A Pivot Table
+
 
 
     ///** @test */
