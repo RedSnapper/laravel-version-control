@@ -2,6 +2,7 @@
 
 namespace Redsnapper\LaravelVersionControl\Tests;
 
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Carbon;
 use Redsnapper\LaravelVersionControl\Tests\Fixtures\Models\Permission;
 use Redsnapper\LaravelVersionControl\Tests\Fixtures\Models\PermissionRole;
@@ -290,4 +291,79 @@ class ManyToManyTest extends Base
         $this->assertCount(3,$role->permissions[0]->pivot->versions);
 
     }
+
+    /** @test */
+    public function test_first_method()
+    {
+        $role = factory(Role::class)->create();
+        $permission = factory(Permission::class)->create();
+        $role->permissions()->attach(Permission::all());
+        $this->assertEquals($permission->name, $role->permissions()->first()->name);
+    }
+
+    /** @test */
+    public function test_firstOrFail_method()
+    {
+        $this->expectException(ModelNotFoundException::class);
+        $role = factory(Role::class)->create();
+        $role->permissions()->firstOrFail(['uid' => 10]);
+    }
+
+    /** @test */
+    public function test_find_method()
+    {
+        $role = factory(Role::class)->create();
+        $permissionA = factory(Permission::class)->create();
+        $permissionB = factory(Permission::class)->create();
+        $role->permissions()->attach(Permission::all());
+        $this->assertEquals($permissionB->name, $role->permissions()->find($permissionB->uid)->name);
+        $this->assertCount(2, $role->permissions()->findMany([$permissionA->uid, $permissionB->uid]));
+    }
+
+    /** @test */
+    public function test_findOrFail_method()
+    {
+        $this->expectException(ModelNotFoundException::class);
+        $role = factory(Role::class)->create();
+        $permission = factory(Permission::class)->create();
+        $role->permissions()->attach(Permission::all());
+        $role->permissions()->findOrFail(10);
+    }
+    
+    /** @test */
+    public function test_findOrNew_method()
+    {
+        $role = factory(Role::class)->create();
+        $permission = factory(Permission::class)->create();
+        $role->permissions()->attach(Permission::all());
+
+        $this->assertEquals($permission->uid, $role->permissions()->findOrNew($permission->uid)->uid);
+        $this->assertNull($role->permissions()->findOrNew('asd')->uid);
+        $this->assertInstanceOf(Permission::class, $role->permissions()->findOrNew('asd'));
+    }
+
+    /** @test */
+    public function test_firstOrCreate_method()
+    {
+        $role = factory(Role::class)->create();
+        $permission = factory(Permission::class)->create();
+        $role->permissions()->attach(Permission::all());
+        $this->assertEquals($permission->uid, $role->permissions()->firstOrCreate(['name' => $permission->name])->uid);
+        $new = $role->permissions()->firstOrCreate(['name' => 'wavez']);
+        $this->assertEquals('wavez', $new->name);
+        $this->assertNotNull($new->uid);
+    }
+
+    /** @test */
+    public function test_updateOrCreate_method()
+    {
+        $role = factory(Role::class)->create();
+        $permission = factory(Permission::class)->create();
+        $role->permissions()->attach(Permission::all());
+        $role->permissions()->updateOrCreate([$permission->getTable() . '.uid' => $permission->uid], ['name' => 'wavez']);
+        $this->assertEquals('wavez', $permission->fresh()->name);
+        $role->permissions()->updateOrCreate([$permission->getTable() . '.uid' => 'asd'], ['name' => 'dives']);
+        $this->assertNotNull($role->permissions()->whereName('dives')->first());
+    }
+
 }
