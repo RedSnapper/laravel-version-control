@@ -4,9 +4,12 @@ namespace Redsnapper\LaravelVersionControl\Tests;
 
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
+use Redsnapper\LaravelVersionControl\Models\BaseModel;
 use Redsnapper\LaravelVersionControl\Tests\Fixtures\Models\Permission;
 use Redsnapper\LaravelVersionControl\Tests\Fixtures\Models\PermissionRole;
 use Redsnapper\LaravelVersionControl\Tests\Fixtures\Models\Role;
+use Redsnapper\LaravelVersionControl\Tests\Fixtures\Models\TouchingPermission;
 
 class ManyToManyTest extends TestCase
 {
@@ -365,5 +368,16 @@ class ManyToManyTest extends TestCase
         $this->assertNotNull($role->permissions()->whereName('dives')->first());
     }
 
-
+    /** @test */
+    public function test_touching_related_models_on_sync()
+    {
+        $permission = TouchingPermission::create(['name' => Str::random()]);
+        $role = factory(Role::class)->create();
+        $this->assertNotEquals('2017-10-10 10:10:10', $role->fresh()->updated_at->toDateTimeString());
+        $this->assertNotEquals('2017-10-10 10:10:10', $permission->fresh()->updated_at->toDateTimeString());
+        Carbon::setTestNow('2017-10-10 10:10:10');
+        $permission->roles()->sync([$role->uid]);
+        $this->assertEquals('2017-10-10 10:10:10', $role->fresh()->updated_at->toDateTimeString());
+        $this->assertEquals('2017-10-10 10:10:10', $permission->fresh()->updated_at->toDateTimeString());
+    }
 }
