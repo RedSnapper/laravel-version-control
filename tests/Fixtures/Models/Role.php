@@ -11,7 +11,7 @@ class Role extends BaseModel
 
     public function permissions()
     {
-        return $this->belongsToMany(Permission::class)->withPivot('region');
+        return $this->belongsToMany(Permission::class)->withPivot('flag');
     }
 
     public function users()

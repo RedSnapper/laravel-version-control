@@ -9,6 +9,8 @@ use Redsnapper\LaravelVersionControl\Tests\Fixtures\Models\Role;
 
 class ManyToManyTest extends Base
 {
+    private $assertEquals;
+
     /** @test */
     public function can_attach_a_pivot_relation_using_a_model()
     {
@@ -32,11 +34,11 @@ class ManyToManyTest extends Base
         $role = factory(Role::class)->create();
         $permission = factory(Permission::class)->create();
 
-        $role->permissions()->attach($permission,['region' => 'foo']);
+        $role->permissions()->attach($permission,['flag' => 'foo']);
 
         $attached = $role->permissions->first();
         $this->assertTrue($attached->is($permission));
-        $this->assertEquals('foo',$attached->pivot->region);
+        $this->assertEquals('foo',$attached->pivot->flag);
 
     }
 
@@ -48,14 +50,14 @@ class ManyToManyTest extends Base
         $permissionB = factory(Permission::class)->create();
 
         $role->permissions()->attach([
-          $permissionA->uid => ['region'=>'A'],
-          $permissionB->uid => ['region'=>'B'],
+          $permissionA->uid => ['flag'=>'A'],
+          $permissionB->uid => ['flag'=>'B'],
         ]);
 
-        $permissions = $role->permissions()->orderBy('region')->get();
+        $permissions = $role->permissions()->orderBy('flag')->get();
 
         $this->assertCount(2,$permissions);
-        $this->assertEquals('A',$permissions->first()->pivot->region);
+        $this->assertEquals('A',$permissions->first()->pivot->flag);
 
     }
 
@@ -65,7 +67,7 @@ class ManyToManyTest extends Base
         $role = factory(Role::class)->create();
         $permission = factory(Permission::class)->create();
 
-        $permission->roles()->attach($role,['region'=>'foo']);
+        $permission->roles()->attach($role,['flag'=>'foo']);
 
         $this->assertEquals(PermissionRole::class,$permission->roles()->getPivotClass());
         $this->assertTrue($permission->roles->first()->is($role));
@@ -78,9 +80,9 @@ class ManyToManyTest extends Base
         $role = factory(Role::class)->create();
         $permissionA = factory(Permission::class)->create();
 
-        $role->permissions()->attach($permissionA,['region'=>'foo']);
-        $this->assertEquals("foo",$role->permissions->first()->pivot->currentVersion->region);
-        $this->assertEquals("foo",$role->permissions->first()->pivot->versions->first()->region);
+        $role->permissions()->attach($permissionA,['flag'=>'foo']);
+        $this->assertEquals("foo",$role->permissions->first()->pivot->currentVersion->flag);
+        $this->assertEquals("foo",$role->permissions->first()->pivot->versions->first()->flag);
     }
 
     /** @test */
@@ -150,7 +152,7 @@ class ManyToManyTest extends Base
         $this->assertCount(1,$role->permissions);
         $this->assertCount(3,$role->permissions->first()->pivot->versions);
 
-        $role->permissions()->attach($permissionA,['region'=>'foo']);
+        $role->permissions()->attach($permissionA,['flag'=>'foo']);
         $this->assertCount(1,$role->refresh()->permissions);
         $this->assertCount(4,$role->permissions->first()->pivot->versions);
 
@@ -181,13 +183,13 @@ class ManyToManyTest extends Base
         $this->assertCount(1,$role->fresh()->permissions);
 
         // Update permission A
-        $results = $role->permissions()->sync([$permissionA->getKey() =>['region'=>'foo']]);
+        $results = $role->permissions()->sync([$permissionA->getKey() =>['flag'=>'foo']]);
 
         $this->assertCount(0,$results['detached']);
         $this->assertContains($permissionA->getKey(),$results['updated']);
 
         $this->assertCount(1,$role->refresh()->permissions);
-        $this->assertEquals('foo',$role->permissions->first()->pivot->region);
+        $this->assertEquals('foo',$role->permissions->first()->pivot->flag);
         $this->assertCount(2,$role->permissions->first()->pivot->versions);
 
     }
@@ -200,9 +202,9 @@ class ManyToManyTest extends Base
 
         $role->permissions()->sync($permission);
         $role->permissions()->detach($permission);
-        $results = $role->permissions()->sync([$permission->getKey()=>['region'=>'foo']]);
+        $results = $role->permissions()->sync([$permission->getKey()=>['flag'=>'foo']]);
         $this->assertCount(1,$results['attached']);
-        $this->assertEquals('foo',$role->permissions->first()->pivot->region);
+        $this->assertEquals('foo',$role->permissions->first()->pivot->flag);
 
     }
 
@@ -241,9 +243,9 @@ class ManyToManyTest extends Base
         $role = factory(Role::class)->create();
         $permission = factory(Permission::class)->create();
 
-        $role->permissions()->attach($permission,['region'=>'foo']);
-        $role->permissions()->updateExistingPivot($permission->getKey(),['region'=>'bar']);
-        $this->assertEquals('bar',$role->permissions->first()->pivot->region);
+        $role->permissions()->attach($permission,['flag'=>'foo']);
+        $role->permissions()->updateExistingPivot($permission->getKey(),['flag'=>'bar']);
+        $this->assertEquals('bar',$role->permissions->first()->pivot->flag);
         $this->assertCount(2,$role->permissions->first()->pivot->versions);
     }
 
@@ -253,10 +255,39 @@ class ManyToManyTest extends Base
         $role = factory(Role::class)->create();
         $permission = factory(Permission::class)->create();
 
-        $role->permissions()->save($permission,['region'=>'foo']);
+        $role->permissions()->save($permission,['flag'=>'foo']);
 
-        $this->assertEquals('foo',$role->permissions->first()->pivot->region);
+        $this->assertEquals('foo',$role->permissions->first()->pivot->flag);
     }
 
-    
+    /** @test */
+    public function test_toggle_method()
+    {
+        $role = factory(Role::class)->create();
+        $permissionA = factory(Permission::class)->create();
+        $permissionB = factory(Permission::class)->create();
+
+        $role->permissions()->toggle([$permissionA->uid]);
+
+        $this->assertEquals(
+            Permission::whereIn('uid', [$permissionA->uid])->pluck('name'),
+            $role->load('permissions')->permissions->pluck('name')
+        );
+
+        $role->permissions()->toggle([$permissionB->getKey(), $permissionA->getKey()]);
+        $this->assertEquals(
+            Permission::whereIn('uid', [$permissionB->uid])->pluck('name'),
+            $role->load('permissions')->permissions->pluck('name')
+        );
+
+        $role->permissions()->toggle([$permissionB->getKey(), $permissionA->getKey() => ['flag' => 'foo']]);
+
+        $this->assertEquals(
+            Permission::whereIn('uid', [$permissionA->getKey()])->pluck('name'),
+            $role->load('permissions')->permissions->pluck('name')
+        );
+        $this->assertEquals('foo', $role->permissions[0]->pivot->flag);
+        $this->assertCount(3,$role->permissions[0]->pivot->versions);
+
+    }
 }

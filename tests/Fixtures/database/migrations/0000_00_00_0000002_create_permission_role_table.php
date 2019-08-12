@@ -18,12 +18,12 @@ class CreatePermissionRoleTable extends Migration
         $this->makeVcTables("permission_role",function(Blueprint $table){
             $table->uuid('permission_uid');
             $table->uuid('role_uid');
-            $table->string('region')->nullable();
+            $table->string('flag')->nullable();
             $table->unique(['permission_uid','role_uid']);
         },function(Blueprint $table){
             $table->uuid('permission_uid');
             $table->uuid('role_uid');
-            $table->string('region')->nullable();
+            $table->string('flag')->nullable();
         });
     }
 

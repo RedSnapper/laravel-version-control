@@ -31,6 +31,14 @@ class BelongsToMany extends \Illuminate\Database\Eloquent\Relations\BelongsToMan
     private $currentlyAttached;
 
     /**
+     * The cached copy of any existing pivots(maybe be inactive).
+     *
+     * @var Collection
+     */
+    private $existingPivots;
+
+
+    /**
      * Attach a model to the parent.
      *
      * @param  mixed $id
@@ -43,8 +51,8 @@ class BelongsToMany extends \Illuminate\Database\Eloquent\Relations\BelongsToMan
 
         // First we need to get any attached pivots as they may exist in the database but have been set to inactive
         // We will check if they exist and update them if they do otherwise we will create a new record
-        $attached = $this->getCurrentlyAttachedPivots();
-        $current = $attached->pluck($this->relatedPivotKey)->all();
+        $existing = $this->getExistingPivots();
+        $current = $existing->pluck($this->relatedPivotKey)->all();
         $records = $this->formatAttachRecords(
             $this->parseIds($id), $attributes
         );
@@ -55,7 +63,7 @@ class BelongsToMany extends \Illuminate\Database\Eloquent\Relations\BelongsToMan
             if (!in_array($id, $current)) {
                 $this->newPivot($record, false)->save();
             } else {
-                $this->updateExistingPivot($id,$record,$touch);
+                $this->updateExistingPivot($id, $record, $touch);
             }
         }
 
@@ -73,7 +81,7 @@ class BelongsToMany extends \Illuminate\Database\Eloquent\Relations\BelongsToMan
         $ids = $this->parseIds($ids);
 
         $results = 0;
-        $records = $this->getCurrentlyAttachedPivots()->when(count($ids) > 0,function($collection) use($ids){
+        $records = $this->getExistingPivots()->when(count($ids) > 0, function ($collection) use ($ids) {
             return $collection->whereIn($this->relatedPivotKey, $ids);
         });
 
@@ -103,7 +111,6 @@ class BelongsToMany extends \Illuminate\Database\Eloquent\Relations\BelongsToMan
         // in this joining table. We'll spin through the given IDs, checking to see
         // if they exist in the array of current ones, and if not we will insert.
         $current = $this->getCurrentlyAttachedPivots()
-            ->filter->vc_active
             ->pluck($this->relatedPivotKey)->all();
 
         $detach = array_diff($current, array_keys(
@@ -138,51 +145,75 @@ class BelongsToMany extends \Illuminate\Database\Eloquent\Relations\BelongsToMan
     }
 
     /**
-     * Attach all of the records that aren't in the given current records.
+     * Toggles a model (or models) from the parent.
      *
-     * @param  array $records
-     * @param  array $current
+     * Each existing model is detached, and non existing ones are attached.
+     *
+     * @param  mixed $ids
      * @param  bool $touch
      * @return array
      */
-    protected function attachNew(array $records, array $current, $touch = true)
+    public function toggle($ids, $touch = true)
     {
-        $changes = ['attached' => [], 'updated' => []];
+        $changes = [
+            'attached' => [],
+            'detached' => [],
+        ];
 
-        foreach ($records as $id => $attributes) {
-            // If the ID is not in the list of existing pivot IDs, we will insert a new pivot
-            // record, otherwise, we will just update this existing record on this joining
-            // table, so that the developers will easily update these records pain free.
-            if (!in_array($id, $current)) {
-                $this->attach($id, $attributes, $touch);
+        $records = $this->formatRecordsList($this->parseIds($ids));
 
-                $changes['attached'][] = $this->castKey($id);
-            }
+        $current = $this->getCurrentlyAttachedPivots();
 
-            // Now we'll try to update an existing pivot record with the attributes that were
-            // given to the method. If the model is actually updated we will add it to the
-            // list of updated pivot records so we return them back out to the consumer.
-            elseif (count($attributes) > 0 &&
-                $this->updateExistingPivot($id, $attributes, $touch)) {
-                $changes['updated'][] = $this->castKey($id);
-            }
+        // Next, we will determine which IDs should get removed from the join table by
+        // checking which of the given ID/records is in the list of current records
+        // and removing all of those rows from this "intermediate" joining table.
+        $detach = array_values(array_intersect(
+            $current->pluck($this->relatedPivotKey)->all(),
+            array_keys($records)
+        ));
+
+        if (count($detach) > 0) {
+            $this->detach($detach, false);
+
+            $changes['detached'] = $this->castKeys($detach);
+        }
+
+        // Finally, for all of the records which were not "detached", we'll attach the
+        // records into the intermediate table. Then, we will add those attaches to
+        // this change list and get ready to return these results to the callers.
+        $attach = array_diff_key($records, array_flip($detach));
+
+        if (count($attach) > 0) {
+            $this->attach($attach, [], false);
+
+            $changes['attached'] = array_keys($attach);
+        }
+
+        // Once we have finished attaching or detaching the records, we will see if we
+        // have done any attaching or detaching, and if we have we will touch these
+        // relationships if they are configured to touch on any database updates.
+        if ($touch && (count($changes['attached']) ||
+                count($changes['detached']))) {
+            $this->touchIfTouching();
         }
 
         return $changes;
     }
 
     /**
+     *
+     * /**
      * Update an existing pivot record on the table.
      *
-     * @param  mixed  $id
-     * @param  array  $attributes
-     * @param  bool   $touch
+     * @param  mixed $id
+     * @param  array $attributes
+     * @param  bool $touch
      * @return int
      */
     public function updateExistingPivot($id, array $attributes, $touch = true)
     {
-        $model = $this->getCurrentlyAttachedPivots()
-            ->firstWhere($this->relatedPivotKey,$id)
+        $model = $this->getExistingPivots()
+            ->firstWhere($this->relatedPivotKey, $id)
             ->fill($attributes);
         $model->vc_active = true;
 
@@ -190,7 +221,7 @@ class BelongsToMany extends \Illuminate\Database\Eloquent\Relations\BelongsToMan
 
         $model->save();
 
-        return (int) $updated;
+        return (int)$updated;
     }
 
     /**
@@ -201,12 +232,26 @@ class BelongsToMany extends \Illuminate\Database\Eloquent\Relations\BelongsToMan
     protected function getCurrentlyAttachedPivots()
     {
         if (!$this->currentlyAttached) {
-            $this->currentlyAttached = $this->newPivotQuery()->get()->map(function ($record) {
+            $this->currentlyAttached = $this->getExistingPivots()->filter->vc_active;
+        }
+
+        return $this->currentlyAttached;
+    }
+
+    /**
+     * Get the pivot models that are currently attached.
+     *
+     * @return \Illuminate\Support\Collection
+     */
+    protected function getExistingPivots()
+    {
+        if (!$this->existingPivots) {
+            $this->existingPivots = $this->newPivotQuery()->get()->map(function ($record) {
                 return $this->newPivot((array)$record, true);
             });
         }
 
-        return $this->currentlyAttached;
+        return $this->existingPivots;
     }
 
     /**

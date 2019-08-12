@@ -19,7 +19,7 @@ class Permission extends BaseModel
     {
         return $this->belongsToMany(Role::class)
           ->using(PermissionRole::class)
-          ->withPivot('region')
+          ->withPivot('flag')
           ->wherePivot('vc_active',1);
     }
 
