@@ -2,9 +2,7 @@
 
 namespace Redsnapper\LaravelVersionControl\Tests\Fixtures\Models;
 
-use Exception;
 use Redsnapper\LaravelVersionControl\Models\BaseModel;
-use Redsnapper\LaravelVersionControl\Tests\Fixtures\TestPermissionsRegistrar;
 
 /**
  * App\Models\Post

@@ -10,37 +10,65 @@ If you wish to adjust the installation you can publish the assets
 
 php artisan publish:vendor to see publishing options, choose the appropriate option to publish this packages assets.
 
-### Version Control Models
+## Migrations
 
 You should setup your migrations to follow the migrations as seen in the tests/Fixtures/database/migrations files.
-For each model 2 tables will be created, the key (normal) table and the version history table. 
+For each model 2 tables will be created, the key (normal) table and the version history table.
+
+Example migration
+
+```php
+
+use Redsnapper\LaravelVersionControl\Database\Blueprint;
+use Redsnapper\LaravelVersionControl\Database\Migration;
+
+class CreateUsersTable extends Migration
+{
+    /**
+     * Run the migrations.
+     *
+     * @return void
+     */
+    public function up()
+    {
+        $this->makeVcTables("users",function(Blueprint $table){
+            $table->string('email')->unique();
+            $table->string('password');
+        },function(Blueprint $table){
+            $table->string('email');
+            $table->string('password');
+        });
+    }
+}
+``` 
+
+Note we are using are own custom Migration and Blueprint class.
+This will create 2 tables: The users table and a corresponding users_versions table.
+The 3rd parameter is optional and will fallback to the fields in the second parameter.
+
+### Version Control Models
 
 Each model you create should extend the Redsnapper\LaravelVersionControl\Models\BaseModel
 
-You must set the following properties on each model:
+```php
+use Redsnapper\LaravelVersionControl\Models\BaseModel;
 
-````php
-protected $versionsTable = 'model_versions'; // This will be the singular version of your model followed by _versions
-protected $fillable = ['uid','gxp_version','gxp_active',... your other model fields];
-````
+class Post extends BaseModel
+{
+}
+
+```
+
 
 ### 'Pivot' tables
-With version control pivot tables dont really exist, but the tables are slightly different. Your migration would follow the same
-as seen in tests/Fixtures/database/migrations/create_permission_role_table.php
 
-The model is then setup with a couple of extra properties
+Pivot table records are never destroyed. On creation they persist as records for the lifecycle of the project. 
+Instead whenever a record is detached an active flag is switched to false.
 
-```
-protected $versionsTable = 'model_name_versions';
-protected $fillable = ['uid','gxp_version','gxp_active','your_first_key','your_second_key'];
+### Versions relationship
 
-public $key1 = "first_uid";
-public $key2 = "second_uid";
-```
+Versions can be accessed from models using the versions relationship.
 
-The belongsToMany relations are then created and managed slightly differently to a normal laravel b2m relationship. 
-You must create your pivot table models, for a start. And then to manage the relationships you must make some changes. 
-
-You can no longer use sync, and must use $model->attach($firstKey, $secondKey, $pivotModel) instead.
-
-You can see examples of this working with users, roles and permissions in the test files.
+```php
+$model->versions();
+``` 
