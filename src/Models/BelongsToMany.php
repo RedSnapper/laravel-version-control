@@ -181,7 +181,7 @@ class BelongsToMany extends \Illuminate\Database\Eloquent\Relations\BelongsToMan
      */
     public function updateExistingPivot($id, array $attributes, $touch = true)
     {
-        $model = $this->currentlyAttached
+        $model = $this->getCurrentlyAttachedPivots()
             ->firstWhere($this->relatedPivotKey,$id)
             ->fill($attributes);
         $model->vc_active = true;

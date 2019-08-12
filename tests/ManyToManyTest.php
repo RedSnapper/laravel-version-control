@@ -220,34 +220,43 @@ class ManyToManyTest extends Base
         $this->assertCount(1,$role->permissions->first()->pivot->versions);
     }
 
+    /** @test */
+    public function can_sync_without_detaching()
+    {
+
+        $role = factory(Role::class)->create();
+        $permissionA = factory(Permission::class)->create();
+        $permissionB = factory(Permission::class)->create();
+
+        $role->permissions()->sync($permissionA);
+        $role->permissions()->syncWithoutDetaching($permissionB);
+
+        $this->assertCount(2,$role->permissions);
+
+    }
+
+    /** @test */
+    public function can_update_existing_pivot()
+    {
+        $role = factory(Role::class)->create();
+        $permission = factory(Permission::class)->create();
+
+        $role->permissions()->attach($permission,['region'=>'foo']);
+        $role->permissions()->updateExistingPivot($permission->getKey(),['region'=>'bar']);
+        $this->assertEquals('bar',$role->permissions->first()->pivot->region);
+        $this->assertCount(2,$role->permissions->first()->pivot->versions);
+    }
+
+    /** @test */
+    public function use_the_save_of_the_pivot_relationship()
+    {
+        $role = factory(Role::class)->create();
+        $permission = factory(Permission::class)->create();
+
+        $role->permissions()->save($permission,['region'=>'foo']);
+
+        $this->assertEquals('foo',$role->permissions->first()->pivot->region);
+    }
+
     
-
-    //TODO toggle
-
-    //TODO App\User::find(1)->roles()->save($role, ['expires' => $expires]);
-    // Saving Additional Data On A Pivot Table
-
-    // TODO $user->roles()->updateExistingPivot($roleId, $attributes);
-    // Updating A Record On A Pivot Table
-
-
-
-    ///** @test */
-    //public function can_sync_many_pivot_relations_at_once()
-    //{
-    //    $this->setupModel(['name' => 'Role for bad necks']);
-    //
-    //    $permissionA = $this->createPermission(["name" => "can-see-the-ground"]);
-    //    $permissionB = $this->createPermission(["name" => "can-see-the-sky"]);
-    //
-    //    $this->model->permissions()->sync([$permissionA->uid, $permissionB->uid]);
-    //
-    //    $this->assertTrue($this->model->hasPermission($permissionA));
-    //    $this->assertTrue($this->model->hasPermission($permissionB));
-    //
-    //    $this->model->permissions()->sync($permissionA);
-    //
-    //    $this->assertTrue($this->model->hasPermission($permissionA));
-    //    $this->assertFalse($this->model->hasPermission($permissionB));
-    //}
 }
