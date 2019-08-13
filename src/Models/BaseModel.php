@@ -4,7 +4,6 @@ namespace Redsnapper\LaravelVersionControl\Models;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Pluralizer;
 use Redsnapper\LaravelVersionControl\Models\Traits\NoDeletesModel;
