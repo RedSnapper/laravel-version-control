@@ -184,7 +184,7 @@ class BaseModel extends Model
      * @param  string  $parentKey
      * @param  string  $relatedKey
      * @param  string  $relationName
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
+     * @return BelongsToMany
      */
     protected function newBelongsToMany(
       Builder $query,
