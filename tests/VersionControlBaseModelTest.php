@@ -245,4 +245,18 @@ class VersionControlBaseModelTest extends TestCase
 
     }
 
+
+    /** @test */
+    public function can_update_an_unguarded_model()
+    {
+        Version::unguard();
+
+        $user = factory(User::class)->create();
+        $user->email = "john@example.com";
+        $user->save();
+
+        $this->assertEquals('john@example.com',$user->currentVersion->email);
+
+    }
+
 }
