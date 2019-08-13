@@ -32,7 +32,7 @@ class Version extends Model
      *
      * @var array
      */
-    protected $guarded = ['created_at','updated_at'];
+    protected $guarded = ['created_at', 'updated_at'];
 
     /**
      * Indicates if the model should be timestamped.
@@ -69,9 +69,9 @@ class Version extends Model
      * @param  array  $attributes
      * @return Version
      */
-    public function createFromNew(array $attributes):self
+    public function createFromNew(array $attributes): self
     {
-        $this->fill($attributes);
+        $this->fill($this->removeBaseModelAttributes($attributes));
         $this->model_uid = (string) Str::uuid();
         $this->vc_active = true;
         $this->vc_parent = null;
@@ -85,9 +85,9 @@ class Version extends Model
      * @param  array  $attributes
      * @return Version
      */
-    public function createFromExisting(array $attributes):self
+    public function createFromExisting(array $attributes): self
     {
-        $this->fill(Arr::except($attributes,['vc_version_uid','uid']));
+        $this->fill($this->removeBaseModelAttributes($attributes));
 
         $this->model_uid = $attributes['uid'];
 
@@ -98,11 +98,28 @@ class Version extends Model
     }
 
     /**
+     * Remove base model attributes
+     * Needed for seeders as guards are ignored during seeding
+     *
+     * @param  array  $attributes
+     * @return array
+     */
+    protected function removeBaseModelAttributes(array $attributes):array
+    {
+        return Arr::except($attributes, [
+          'vc_version_uid',
+          'uid',
+          'created_at',
+          'updated_at'
+        ]);
+    }
+
+    /**
      * Parent of this version
      *
      * @return HasOne
      */
-    public function parent():HasOne
+    public function parent(): HasOne
     {
         $instance = $this->newRelatedInstance(Version::class);
         $instance->setTable($this->getTable());
@@ -114,7 +131,6 @@ class Version extends Model
         return $this->newHasOne($instance->newQuery(), $this, $instance->getTable().'.'.$foreignKey, $localKey);
     }
 
-
     /**
      * Restore this version
      *
@@ -124,11 +140,11 @@ class Version extends Model
     {
 
         $model->fill(
-          Arr::except($this->attributes,['uid','model_uid','vc_parent','created_at','updated_at'])
+          Arr::except($this->attributes, ['uid', 'model_uid', 'vc_parent', 'created_at', 'updated_at'])
         );
 
         $model->forceFill([
-          'vc_version_uid'=> $this->attributes['uid']
+          'vc_version_uid' => $this->attributes['uid']
         ]);
 
         return tap($model)->save();
@@ -182,7 +198,7 @@ class Version extends Model
      */
     public function toModelArray()
     {
-        return Arr::except($this->attributes,['uid','model_uid','vc_parent']);
+        return Arr::except($this->attributes, ['uid', 'model_uid', 'vc_parent']);
     }
 
     /**
@@ -194,6 +210,5 @@ class Version extends Model
     {
         throw new ReadOnlyException(__FUNCTION__, get_called_class());
     }
-
 
 }
