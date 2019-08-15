@@ -43,7 +43,7 @@ abstract class Migration extends LaravelMigration
 
         $closure = $versionClosure ?? $modelClosure;
 
-        $versionsTableName = Pluralizer::singular($tableName) . "_versions";
+        $versionsTableName = $this->getVersionTableName($tableName);
 
         $this->schema->create($versionsTableName, function (Blueprint $table) use ($versionsTableName,$closure) {
             $table->vcVersionTableColumns($versionsTableName);
@@ -60,6 +60,11 @@ abstract class Migration extends LaravelMigration
     public function dropVcTables(string $tableName)
     {
         $this->schema->dropIfExists($tableName);
-        $this->schema->dropIfExists("{$tableName}_versions");
+        $this->schema->dropIfExists($this->getVersionTableName($tableName););
+    }
+
+    private function getVersionTableName($tableName)
+    {
+        return Pluralizer::singular($tableName) . "_versions";
     }
 }
