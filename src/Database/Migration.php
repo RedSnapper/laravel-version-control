@@ -60,7 +60,7 @@ abstract class Migration extends LaravelMigration
     public function dropVcTables(string $tableName)
     {
         $this->schema->dropIfExists($tableName);
-        $this->schema->dropIfExists($this->getVersionTableName($tableName););
+        $this->schema->dropIfExists($this->getVersionTableName($tableName));
     }
 
     private function getVersionTableName($tableName)
