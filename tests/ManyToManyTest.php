@@ -161,9 +161,6 @@ class ManyToManyTest extends TestCase
 
     }
 
-    // TODO Dates and touch
-
-
     /** @test */
     public function can_sync_pivot_relations()
     {
