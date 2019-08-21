@@ -270,4 +270,12 @@ class VersionControlBaseModelTest extends TestCase
 
     }
 
+    /** @test */
+    public function vc_active_is_a_boolean()
+    {
+        $user = factory(User::class)->create();
+
+        $this->assertTrue($user->fresh()->vc_active);
+    }
+
 }

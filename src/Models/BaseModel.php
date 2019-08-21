@@ -123,6 +123,17 @@ class BaseModel extends Model
     }
 
     /**
+     * Is the model active
+     *
+     * @param $value
+     * @return bool
+     */
+    public function getVcActiveAttribute($value)
+    {
+        return (bool) $value;
+    }
+
+    /**
      * Perform the actual delete query on this model instance.
      *
      * @return mixed
