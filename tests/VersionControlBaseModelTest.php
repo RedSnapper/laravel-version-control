@@ -53,6 +53,17 @@ class VersionControlBaseModelTest extends TestCase
     }
 
     /** @test */
+    public function saving_a_model_which_hasnt_changed_doesnt_create_a_new_version()
+    {
+        $user = factory(User::class)->create([
+          'email' => 'john@example.com',
+        ]);
+        $user->save();
+
+        $this->assertCount(1,$user->versions);
+    }
+
+    /** @test */
     public function can_be_deleted()
     {
         $user = factory(User::class)->create();

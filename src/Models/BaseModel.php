@@ -28,7 +28,7 @@ class BaseModel extends Model
     use ReadOnlyModel,
       NoDeletesModel;
 
-    public static function boot()
+    protected static function boot()
     {
         parent::boot();
 
@@ -46,6 +46,10 @@ class BaseModel extends Model
      */
     protected function createVersion(): bool
     {
+        if (!$this->isDirty() && $this->exists) {
+            return true;
+        }
+
         $version = $this->getVersionInstance();
 
         if (!$this->exists) {
@@ -118,7 +122,6 @@ class BaseModel extends Model
         return $this->newHasOne($instance->newQuery(), $this, $instance->getTable().'.'.$foreignKey, $localKey);
     }
 
-
     /**
      * Perform the actual delete query on this model instance.
      *
@@ -150,7 +153,7 @@ class BaseModel extends Model
      */
     public function validateData(): bool
     {
-        $me = collect(Arr::except($this->toArray(), ['uid', 'vc_version_uid','updated_at']));
+        $me = collect(Arr::except($this->toArray(), ['uid', 'vc_version_uid', 'updated_at']));
 
         $difference = $me->diffAssoc($this->versions()->latest()->first()->toModelArray());
 
@@ -197,7 +200,7 @@ class BaseModel extends Model
       $relationName = null
     ) {
         return (new BelongsToMany($query, $parent, $table, $foreignPivotKey, $relatedPivotKey, $parentKey, $relatedKey,
-          $relationName))->wherePivot('vc_active',1);
+          $relationName))->wherePivot('vc_active', 1);
     }
 
 }
