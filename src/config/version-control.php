@@ -5,6 +5,6 @@ use Redsnapper\LaravelVersionControl\Models\Version;
 
 return [
     'user' => User::class,
-    'default_modifying_user' => ['email' => 'laravelversioncontrol@redsnapper.net'],
+    'default_modifying_user' => [],
     'version_model' => Version::class
 ];
