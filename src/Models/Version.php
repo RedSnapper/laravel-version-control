@@ -2,14 +2,14 @@
 
 namespace Redsnapper\LaravelVersionControl\Models;
 
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Redsnapper\LaravelVersionControl\Exceptions\ReadOnlyException;
 use Redsnapper\LaravelVersionControl\Models\Traits\NoDeletesModel;
 use Redsnapper\LaravelVersionControl\Models\Traits\NoUpdatesModel;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Version extends Model
 {
@@ -32,7 +32,7 @@ class Version extends Model
      *
      * @var array
      */
-    protected $guarded = ['created_at', 'updated_at'];
+    protected $guarded = ['created_at'];
 
     /**
      * Indicates if the model should be timestamped.
@@ -41,8 +41,10 @@ class Version extends Model
      */
     public $timestamps = false;
 
+    protected $dates = ['created_at'];
+
     use NoDeletesModel,
-      NoUpdatesModel;
+        NoUpdatesModel;
 
     public static function boot()
     {
@@ -104,13 +106,13 @@ class Version extends Model
      * @param  array  $attributes
      * @return array
      */
-    protected function removeBaseModelAttributes(array $attributes):array
+    protected function removeBaseModelAttributes(array $attributes): array
     {
         return Arr::except($attributes, [
-          'vc_version_uid',
-          'uid',
-          'created_at',
-          'updated_at'
+            'vc_version_uid',
+            'uid',
+            'created_at',
+            'updated_at'
         ]);
     }
 
@@ -134,17 +136,19 @@ class Version extends Model
     /**
      * Restore this version
      *
+     * @param  BaseModel  $model
+     *
      * @return bool
      */
     public function restore(BaseModel $model)
     {
 
         $model->fill(
-          Arr::except($this->attributes, ['uid', 'model_uid', 'vc_parent', 'created_at', 'updated_at'])
+            Arr::except($this->attributes, ['uid', 'model_uid', 'vc_parent', 'created_at'])
         );
 
         $model->forceFill([
-          'vc_version_uid' => $this->attributes['uid']
+            'vc_version_uid' => $this->attributes['uid']
         ]);
 
         return tap($model)->save();
@@ -157,7 +161,8 @@ class Version extends Model
      */
     public function modifyingUser(): BelongsTo
     {
-        return $this->belongsTo(config('version-control.user'), 'vc_modifier_uid', 'uid');
+        return $this->belongsTo(config('version-control.user'), 'vc_modifier_uid', 'uid')
+            ->withDefault(config('version-control.default_modifying_user'));
     }
 
     /**

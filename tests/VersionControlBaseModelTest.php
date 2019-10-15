@@ -156,12 +156,18 @@ class VersionControlBaseModelTest extends TestCase
     }
 
     /** @test */
-    public function a_version_may_have_an_owner()
+    public function a_version_always_has_a_default_owner()
     {
         $userA = factory(User::class)->create();
 
-        $this->assertNull($userA->currentVersion->modifyingUser);
+        $this->assertNotNull($userA->currentVersion->modifyingUser);
+        $this->assertEquals(config('version-control.default_modifying_user')['email'], $userA->currentVersion->modifyingUser->email);
+    }
 
+    /** @test */
+    public function a_version_may_have_an_owner()
+    {
+        $userA = factory(User::class)->create();
         $this->actingAs($userA);
 
         $userB = factory(User::class)->create();
@@ -253,7 +259,6 @@ class VersionControlBaseModelTest extends TestCase
         $this->assertEquals($oldDate,$user->created_at);
         $this->assertCount(2,$user->versions);
         $this->assertEquals($newDate,$user->currentVersion->created_at);
-
     }
 
 

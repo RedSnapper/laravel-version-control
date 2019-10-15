@@ -82,7 +82,8 @@ class BaseModel extends Model
      */
     private function getVersionInstance(): Version
     {
-        $versionClass = new Version();
+        $class = config('version-control.version_model');
+        $versionClass = new $class;
         return $versionClass->setTable($this->getVersionsTable());
     }
 
