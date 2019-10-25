@@ -315,6 +315,6 @@ class BaseModel extends Model
      */
     public function trashed()
     {
-        return $this->vc_active ? false : true;
+        return !$this->vc_active;
     }
 }
