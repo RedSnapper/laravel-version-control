@@ -114,7 +114,7 @@ class VersionControlBaseModelTest extends TestCase
         $user->save();
 
         $this->assertEquals('version1@tests.com',
-          $user->versions()->withoutGlobalScope('mostRecent')->orderBy('created_at','asc')->first()->email);
+          $user->versions()->withoutCreatedAtOrder()->orderBy('created_at','asc')->first()->email);
     }
 
     /** @test */

@@ -2,7 +2,6 @@
 
 namespace Redsnapper\LaravelVersionControl\Models;
 
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -11,6 +10,7 @@ use Illuminate\Support\Str;
 use Redsnapper\LaravelVersionControl\Exceptions\ReadOnlyException;
 use Redsnapper\LaravelVersionControl\Models\Traits\NoDeletesModel;
 use Redsnapper\LaravelVersionControl\Models\Traits\NoUpdatesModel;
+use Redsnapper\LaravelVersionControl\Scopes\CreatedAtOrderScope;
 
 class Version extends Model
 {
@@ -51,9 +51,7 @@ class Version extends Model
     {
         parent::boot();
 
-        static::addGlobalScope('latest', function (Builder $builder) {
-            $builder->latest();
-        });
+        static::addGlobalScope(new CreatedAtOrderScope());
 
         /**
          * On creating, we verify whether our new entry has a previous version or not, increment the version and see if
@@ -221,4 +219,8 @@ class Version extends Model
         throw new ReadOnlyException(__FUNCTION__, get_called_class());
     }
 
+    public function scopeWithoutLatestOrder()
+    {
+
+    }
 }
