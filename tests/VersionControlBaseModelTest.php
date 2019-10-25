@@ -98,7 +98,7 @@ class VersionControlBaseModelTest extends TestCase
     public function versions_are_returned_latest_first()
     {
         $user = factory(User::class)->create(['email'=>'version1@tests.com']);
-        sleep(1);
+        Carbon::setTestNow(now()->addMinute());
         $user->email = "version2@tests.com";
         $user->save();
 
@@ -109,7 +109,7 @@ class VersionControlBaseModelTest extends TestCase
     public function version_latest_scope_can_be_removed()
     {
         $user = factory(User::class)->create(['email'=>'version1@tests.com']);
-        sleep(1);
+        Carbon::setTestNow(now()->addMinute());
         $user->email = "version2@tests.com";
         $user->save();
 
