@@ -2,6 +2,7 @@
 
 namespace Redsnapper\LaravelVersionControl\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -49,6 +50,10 @@ class Version extends Model
     public static function boot()
     {
         parent::boot();
+
+        static::addGlobalScope('latest', function (Builder $builder) {
+            $builder->latest();
+        });
 
         /**
          * On creating, we verify whether our new entry has a previous version or not, increment the version and see if

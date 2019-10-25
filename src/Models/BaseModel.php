@@ -308,4 +308,13 @@ class BaseModel extends Model
           $relationName))->wherePivot('vc_active', 1);
     }
 
+    /**
+     * Check if the model is deleted or not
+     *
+     * @return bool
+     */
+    public function trashed()
+    {
+        return $this->vc_active ? false : true;
+    }
 }

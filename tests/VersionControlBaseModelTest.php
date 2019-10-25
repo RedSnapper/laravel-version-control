@@ -71,6 +71,7 @@ class VersionControlBaseModelTest extends TestCase
 
         $this->assertCount(2,$user->versions);
         $this->assertFalse($user->exists);
+        $this->assertTrue($user->trashed());
 
         tap($user->currentVersion,function(Version $version){
             $this->assertTrue($version->isDeleted());
@@ -91,6 +92,29 @@ class VersionControlBaseModelTest extends TestCase
 
         $this->assertTrue($userA->is(User::onlyTrashed()->first()));
         $this->assertCount(1,User::all());
+    }
+
+    /** @test */
+    public function versions_are_returned_latest_first()
+    {
+        $user = factory(User::class)->create(['email'=>'version1@tests.com']);
+        sleep(1);
+        $user->email = "version2@tests.com";
+        $user->save();
+
+        $this->assertEquals('version2@tests.com', $user->versions()->first()->email);
+    }
+
+    /** @test */
+    public function version_latest_scope_can_be_removed()
+    {
+        $user = factory(User::class)->create(['email'=>'version1@tests.com']);
+        sleep(1);
+        $user->email = "version2@tests.com";
+        $user->save();
+
+        $this->assertEquals('version1@tests.com',
+          $user->versions()->withoutGlobalScope('mostRecent')->orderBy('created_at','asc')->first()->email);
     }
 
     /** @test */
