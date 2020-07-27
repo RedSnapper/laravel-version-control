@@ -307,4 +307,6 @@ class VersionControlBaseModelTest extends TestCase
         $this->assertTrue($user->fresh()->vc_active);
     }
 
+
+
 }
