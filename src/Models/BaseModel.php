@@ -261,7 +261,7 @@ class BaseModel extends Model
         $me = collect(Arr::except($this->toArray(), ['uid', 'vc_version_uid', 'updated_at']));
 
         $difference = $me->diffAssoc($this->versions()->latest()->first()->toArray());
-        
+
         return $difference->isEmpty();
     }
 
