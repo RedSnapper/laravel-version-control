@@ -282,6 +282,23 @@ class BaseModel extends Model
     }
 
     /**
+     * Anonymize field data
+     *
+     * @param  array  $fields
+     */
+    public function anonymize(array $fields)
+    {
+
+        // Create a record to anonymize data
+        $this->update($fields);
+
+        // Update all the version data
+        $this->versions()->update($fields);
+
+    }
+
+
+    /**
      * Instantiate a new BelongsToMany relationship.
      *
      * @param  Builder  $query

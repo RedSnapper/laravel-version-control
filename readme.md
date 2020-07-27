@@ -72,3 +72,10 @@ Versions can be accessed from models using the versions relationship.
 ```php
 $model->versions();
 ``` 
+
+### Anonymize
+To anonymize any field for any model pass an array of the fields to be anonymized as below.
+```php
+$model->anonymize(['email'=>'anon@example.com']);
+``` 
+This will create a new version for the action and will anonymize the fields passed. This will anonymize all versions attached to this model.

@@ -307,6 +307,19 @@ class VersionControlBaseModelTest extends TestCase
         $this->assertTrue($user->fresh()->vc_active);
     }
 
+    /** @test */
+    public function can_anonymize_fields()
+    {
+        $user = factory(User::class)->create();
+        $user->email = "john@example.com";
+        $user->save();
 
+        $user->anonymize(['email'=>$user->getKey()]);
+
+        $this->assertEquals($user->getKey(), $user->email);
+        $this->assertCount(3, $user->versions);
+
+        $this->assertDatabaseMissing("user_versions", ['email' => 'john@example.com']);
+    }
 
 }
