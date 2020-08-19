@@ -33,7 +33,7 @@ class Version extends Model
      *
      * @var array
      */
-    protected $guarded = ['created_at'];
+    protected $guarded = [];
 
     /**
      * Indicates if the model should be timestamped.
@@ -76,10 +76,8 @@ class Version extends Model
      */
     public function createFromNew(array $attributes): self
     {
-        // Bodge to work for now before finding out WHY
-        $this->attributes = $this->removeBaseModelAttributes($attributes);
-        // This is no longer filling attributes correctly for me, only populates 'name' on any model, and the rest are ignored?!
-        // $this->fill($this->removeBaseModelAttributes($attributes));
+
+        $this->forceFill($this->removeBaseModelAttributes($attributes));
         $this->model_uid = (string) Str::uuid();
         $this->vc_active = true;
         $this->vc_parent = null;
@@ -95,10 +93,8 @@ class Version extends Model
      */
     public function createFromExisting(array $attributes): self
     {
-        // Bodge to work for now before finding out WHY
-        $this->attributes = $this->removeBaseModelAttributes($attributes);
-        // This is no longer filling attributes correctly for me, only populates 'name' on any model, and the rest are ignored?!
-        // $this->fill($this->removeBaseModelAttributes($attributes));
+
+        $this->forceFill($this->removeBaseModelAttributes($attributes));
 
         $this->model_uid = $attributes['uid'];
 
