@@ -2,7 +2,7 @@
     "name": "rs/laravel-version-control",
     "description": "Foundations for making your app version controlled. Provides migration, blueprint and base models. Will make your app GxP compliant if you exclusively use the VC models and table structure as set out in this package.",
     "require": {
-        "php": "^7.1.3"
+        "php": "^7.3|^8.0"
     },
     "autoload": {
         "psr-4": {
