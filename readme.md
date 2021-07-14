@@ -4,7 +4,9 @@ This package provides base models to use to make your app Version Control. It wi
 
 ## Installation
 
-Composer require redsnapper/laravel-version-control
+```sh
+Composer require rs/laravel-version-control
+```
 
 If you wish to adjust the installation you can publish the assets
 
