@@ -5,12 +5,12 @@ This package provides base models to use to make your app Version Control. It wi
 ## Installation
 
 ```sh
-Composer require rs/laravel-version-control
+composer require rs/laravel-version-control
 ```
 
 If you wish to adjust the installation you can publish the assets
 
-php artisan publish:vendor to see publishing options, choose the appropriate option to publish this packages assets.
+`php artisan vendor:publish` to see publishing options, choose the appropriate option to publish this packages assets.
 
 ## Migrations
 
