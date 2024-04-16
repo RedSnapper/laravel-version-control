@@ -258,7 +258,7 @@ class BaseModel extends Model
      */
     public function validateData(): bool
     {
-        $me = collect(Arr::except($this->toArray(), ['uid', 'vc_version_uid', 'updated_at']));
+        $me = collect(Arr::except($this->toArray(), ['uid', 'vc_version_uid', 'updated_at', 'created_at']));
 
         $difference = $me->diffAssoc($this->versions()->latest()->first()->toArray());
 
